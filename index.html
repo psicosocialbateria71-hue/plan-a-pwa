@@ -264,10 +264,10 @@ input,select,textarea,button{font-family:inherit}
   <div style="padding:14px 0">
     <div class="ibox ibox-purple" style="margin:0 14px 10px">
       <b>Recargos según Código Sustantivo del Trabajo (Colombia):</b><br>
-      🟡 <b>Diurna</b> Lun–Sáb 6am–9pm → +25% sobre hora ordinaria<br>
-      🔵 <b>Nocturna</b> Lun–Sáb 9pm–6am → +75%<br>
-      🟠 <b>Dominical/Festiva diurna</b> 6am–9pm → +100%<br>
-      🔴 <b>Dominical/Festiva nocturna</b> 9pm–6am → +150%<br>
+      🟡 <b>Diurna</b> Lun–Sáb 6am–7pm → +25% sobre hora ordinaria<br>
+      🔵 <b>Nocturna</b> Lun–Sáb 7pm–6am → +75%<br>
+      🟠 <b>Dominical/Festiva diurna</b> 6am–7pm → +100%<br>
+      🔴 <b>Dominical/Festiva nocturna</b> 7pm–6am → +150%<br>
       <b>Límite legal:</b> máx. 2h/día · máx. 12h/semana (Art.167 CST · Ley 50/90)
     </div>
     <div class="sg" id="ex-stats"></div>
@@ -307,8 +307,8 @@ input,select,textarea,button{font-family:inherit}
         <label>Tipo detectado automáticamente</label>
         <select id="ne-tipo" onchange="showRecargo()">
           <option value="">Se detecta al ingresar la hora de inicio</option>
-          <option value="Diurna">🟡 Diurna — Lun–Sáb 6:00am–9:00pm (+25%)</option>
-          <option value="Nocturna">🔵 Nocturna — Lun–Sáb 9:00pm–6:00am (+75%)</option>
+          <option value="Diurna">🟡 Diurna — Lun–Sáb 6:00am–7:00pm (+25%)</option>
+          <option value="Nocturna">🔵 Nocturna — Lun–Sáb 7:00pm–6:00am (+75%)</option>
           <option value="Dominical/Festiva Diurna">🟠 Dominical/Festiva diurna (+100%)</option>
           <option value="Dominical/Festiva Nocturna">🔴 Dominical/Festiva nocturna (+150%)</option>
         </select>
@@ -665,7 +665,7 @@ function detectTipo(fecha,hora){
   const d=new Date(fecha+'T00:00:00'), dow=d.getDay(); // 0=dom
   const esFestivo=dow===0;
   const [h]=hora.split(':').map(Number);
-  const diurno=h>=6&&h<21;
+  const diurno=h>=6&&h<19; // Ley 2466 de 2025: nocturno desde las 7:00 p.m.
   if(esFestivo) return diurno?'Dominical/Festiva Diurna':'Dominical/Festiva Nocturna';
   return diurno?'Diurna':'Nocturna';
 }
