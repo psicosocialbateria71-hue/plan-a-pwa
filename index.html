@@ -471,15 +471,14 @@ input,select,textarea,button{font-family:inherit}
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- JAVASCRIPT                                                  -->
 <!-- ══════════════════════════════════════════════════════════ -->
-<script type="module">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
 // ── CONSTANTS ────────────────────────────────────────────────
 const RECARGOS={'Diurna':0.25,'Nocturna':0.75,'Dominical/Festiva Diurna':1.00,'Dominical/Festiva Nocturna':1.50};
 const SALARIO_MIN=1423500; // Salario mínimo 2025 Colombia
 
 // ── FIREBASE ──────────────────────────────────────────────────
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyDucT-LFMEs-axLoitBnVTxg7bJsvfvz_w",
   authDomain: "plan-a-pwa.firebaseapp.com",
@@ -489,30 +488,32 @@ const firebaseConfig = {
   appId: "1:1017003719819:web:9f896a48aeadd02a03688e"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// ── DB (Firebase + localStorage para sesión) ──────────────────
+// ── DB (Firebase compat + localStorage para sesión) ───────────
 const DB = {
-  // SESIÓN — sigue en localStorage (solo este dispositivo)
+  // SESIÓN — localStorage (solo este dispositivo)
   session(){try{return JSON.parse(localStorage.getItem('pa_session'))||null}catch{return null}},
   saveSession(u){localStorage.setItem('pa_session',JSON.stringify(u))},
   clearSession(){localStorage.removeItem('pa_session')},
 
   // USUARIOS — Firestore
   async getUsers(){
-    const snap = await getDocs(collection(db,'users'));
+    const snap = await db.collection('users').get();
     return snap.docs.map(d=>({id:d.id,...d.data()}));
   },
   async saveUser(u){
-    await setDoc(doc(db,'users',u.id), u);
+    await db.collection('users').doc(u.id).set(u);
   },
   async deleteUser(id){
-    await deleteDoc(doc(db,'users',id));
+    await db.collection('users').doc(id).delete();
   },
   async findUser(username, password){
-    const q = query(collection(db,'users'), where('username','==',username), where('password','==',password));
-    const snap = await getDocs(q);
+    const snap = await db.collection('users')
+      .where('username','==',username)
+      .where('password','==',password)
+      .get();
     if(snap.empty) return null;
     const d = snap.docs[0];
     return {id:d.id,...d.data()};
@@ -520,22 +521,19 @@ const DB = {
 
   // SOLICITUDES — Firestore
   async getSolic(){
-    const snap = await getDocs(collection(db,'solicitudes'));
+    const snap = await db.collection('solicitudes').get();
     return snap.docs.map(d=>({id:d.id,...d.data()}));
   },
   async saveSolicDoc(s){
-    await setDoc(doc(db,'solicitudes',s.id), s);
-  },
-  async updateSolic(id, data){
-    await updateDoc(doc(db,'solicitudes',id), data);
+    await db.collection('solicitudes').doc(s.id).set(s);
   },
 };
 
 // ── SEED ADMIN (primera vez) ───────────────────────────────────
 async function initAdmin(){
-  const adminDoc = await getDoc(doc(db,'users','admin'));
-  if(!adminDoc.exists()){
-    await setDoc(doc(db,'users','admin'),{
+  const adminDoc = await db.collection('users').doc('admin').get();
+  if(!adminDoc.exists){
+    await db.collection('users').doc('admin').set({
       id:'admin',username:'admin',password:'admin2026',role:'admin',
       nombre:'Daniel Bastidas',cargo:'Administrador',area:'SST',
       profile:{salario:SALARIO_MIN},createdAt:new Date().toISOString()
