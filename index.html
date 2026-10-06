@@ -471,38 +471,91 @@ input,select,textarea,button{font-family:inherit}
 <!-- ══════════════════════════════════════════════════════════ -->
 <!-- JAVASCRIPT                                                  -->
 <!-- ══════════════════════════════════════════════════════════ -->
-<script>
+<script type="module">
 // ── CONSTANTS ────────────────────────────────────────────────
 const RECARGOS={'Diurna':0.25,'Nocturna':0.75,'Dominical/Festiva Diurna':1.00,'Dominical/Festiva Nocturna':1.50};
 const SALARIO_MIN=1423500; // Salario mínimo 2025 Colombia
 
-// ── DB ────────────────────────────────────────────────────────
-const DB={
-  get(k){try{return JSON.parse(localStorage.getItem('pa_'+k))||null}catch{return null}},
-  set(k,v){localStorage.setItem('pa_'+k,JSON.stringify(v))},
-  users(){return this.get('users')||[]},
-  saveUsers(u){this.set('users',u)},
-  solic(){return this.get('solic')||[]},
-  saveSolic(s){this.set('solic',s)},
-  session(){return this.get('session')},
-  saveSession(u){this.set('session',u)},
-  clearSession(){localStorage.removeItem('pa_session')},
+// ── FIREBASE ──────────────────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDucT-LFMEs-axLoitBnVTxg7bJsvfvz_w",
+  authDomain: "plan-a-pwa.firebaseapp.com",
+  projectId: "plan-a-pwa",
+  storageBucket: "plan-a-pwa.firebasestorage.app",
+  messagingSenderId: "1017003719819",
+  appId: "1:1017003719819:web:9f896a48aeadd02a03688e"
 };
 
-// Seed admin
-(()=>{
-  if(!DB.users().find(u=>u.role==='admin')){
-    DB.saveUsers([{id:'admin',username:'admin',password:'admin2026',role:'admin',
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+// ── DB (Firebase + localStorage para sesión) ──────────────────
+const DB = {
+  // SESIÓN — sigue en localStorage (solo este dispositivo)
+  session(){try{return JSON.parse(localStorage.getItem('pa_session'))||null}catch{return null}},
+  saveSession(u){localStorage.setItem('pa_session',JSON.stringify(u))},
+  clearSession(){localStorage.removeItem('pa_session')},
+
+  // USUARIOS — Firestore
+  async getUsers(){
+    const snap = await getDocs(collection(db,'users'));
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  },
+  async saveUser(u){
+    await setDoc(doc(db,'users',u.id), u);
+  },
+  async deleteUser(id){
+    await deleteDoc(doc(db,'users',id));
+  },
+  async findUser(username, password){
+    const q = query(collection(db,'users'), where('username','==',username), where('password','==',password));
+    const snap = await getDocs(q);
+    if(snap.empty) return null;
+    const d = snap.docs[0];
+    return {id:d.id,...d.data()};
+  },
+
+  // SOLICITUDES — Firestore
+  async getSolic(){
+    const snap = await getDocs(collection(db,'solicitudes'));
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  },
+  async saveSolicDoc(s){
+    await setDoc(doc(db,'solicitudes',s.id), s);
+  },
+  async updateSolic(id, data){
+    await updateDoc(doc(db,'solicitudes',id), data);
+  },
+};
+
+// ── SEED ADMIN (primera vez) ───────────────────────────────────
+async function initAdmin(){
+  const adminDoc = await getDoc(doc(db,'users','admin'));
+  if(!adminDoc.exists()){
+    await setDoc(doc(db,'users','admin'),{
+      id:'admin',username:'admin',password:'admin2026',role:'admin',
       nombre:'Daniel Bastidas',cargo:'Administrador',area:'SST',
-      profile:{salario:SALARIO_MIN},createdAt:new Date().toISOString()}]);
+      profile:{salario:SALARIO_MIN},createdAt:new Date().toISOString()
+    });
   }
-})();
+}
+
+// ── CACHE LOCAL (para evitar múltiples lecturas a Firestore) ──
+let _users = null, _solic = null;
+async function loadCache(){
+  [_users, _solic] = await Promise.all([DB.getUsers(), DB.getSolic()]);
+}
+function usersCache(){return _users||[];}
+function solicCache(){return _solic||[];}
 
 // ── STATE ─────────────────────────────────────────────────────
 let CU=null, CS='', cierreId=null;
 
 // ── NAVIGATION ────────────────────────────────────────────────
-function navTo(sid){
+async function navTo(sid){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const s=document.getElementById(sid);
   if(s){s.classList.add('active');s.scrollTop=0}
@@ -511,6 +564,10 @@ function navTo(sid){
   const nm={'s-home':'n-home','s-perfil':'n-perfil','s-extras':'n-extras',
     's-admin':'n-adm','s-aprobar':'n-adm','s-nueva':'n-extras','s-cierre':'n-extras'};
   if(nm[sid]) document.getElementById(nm[sid])?.classList.add('on');
+  // Recargar datos desde Firestore al cambiar pantalla
+  if(['s-home','s-extras','s-aprobar','s-admin'].includes(sid)){
+    await loadCache();
+  }
   if(sid==='s-home') renderHome();
   if(sid==='s-extras') renderExtras();
   if(sid==='s-perfil') loadPerfil();
@@ -520,15 +577,18 @@ function navTo(sid){
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
-function doLogin(){
+async function doLogin(){
   const u=gv('l-user').trim(), p=gv('l-pass');
   if(!u||!p){toast('Ingrese usuario y contraseña','err');return}
-  const found=DB.users().find(x=>x.username===u&&x.password===p);
+  toast('Verificando...','');
+  const found = await DB.findUser(u,p);
   if(!found){toast('Usuario o contraseña incorrectos','err');return}
-  CU=found; DB.saveSession(found); enterApp();
+  CU=found; DB.saveSession(found); await enterApp();
 }
-function enterApp(){
+async function enterApp(){
   if(!CU) return;
+  toast('Cargando...','');
+  await loadCache();
   document.getElementById('login-overlay').classList.add('hidden');
   const nav=document.getElementById('nav');
   nav.classList.add('on');
@@ -541,15 +601,16 @@ function enterApp(){
   navTo('s-home');
 }
 function logout(){
-  CU=null; DB.clearSession();
+  CU=null; _users=null; _solic=null; DB.clearSession();
   document.getElementById('nav').classList.remove('on');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('login-overlay').classList.remove('hidden');
   gEl('l-user').value=''; gEl('l-pass').value='';
 }
-window.addEventListener('DOMContentLoaded',()=>{
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await initAdmin();
   const s=DB.session();
-  if(s){CU=s;enterApp();}
+  if(s){CU=s; await enterApp();}
   gEl('ne-fecha').value=today();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!CU)doLogin()});
@@ -559,10 +620,10 @@ function renderHome(){
   if(!CU) return;
   gEl('h-name').textContent=firstName(CU.nombre||CU.username);
   gEl('h-role').textContent=roleLabel(CU.role)+(CU.area?' · '+CU.area:'');
-  const all=DB.solic(), mias=all.filter(s=>s.userId===CU.id);
+  const all=solicCache(), mias=all.filter(s=>s.userId===CU.id);
   const sg=gEl('h-stats');
   if(CU.role==='admin'){
-    const us=DB.users().filter(u=>u.role!=='admin');
+    const us=usersCache().filter(u=>u.role!=='admin');
     sg.innerHTML=stCard(us.length,'Trabajadores')+stCard(all.filter(s=>s.estado==='pendiente').length,'Pendientes')
       +stCard(all.filter(s=>s.etapa==='cierre'&&s.estado==='pendiente').length,'Cierres')
       +stCard(all.filter(s=>s.estado==='cerrada').length,'Cerradas');
@@ -602,7 +663,7 @@ function renderHome(){
 // ── PERFIL ────────────────────────────────────────────────────
 function loadPerfil(){
   if(!CU) return;
-  const u=DB.users().find(x=>x.id===CU.id)||CU, p=u.profile||{};
+  const u=usersCache().find(x=>x.id===CU.id)||CU, p=u.profile||{};
   sv('pf-nombre',u.nombre||''); sv('pf-cedula',p.cedula||'');
   sv('pf-cargo',u.cargo||''); sv('pf-area',u.area||'');
   sv('pf-tel',p.tel||''); sv('pf-email',p.email||'');
@@ -610,8 +671,8 @@ function loadPerfil(){
   sv('pf-acud',p.acud||''); sv('pf-acud-tel',p.acudTel||'');
   if(p.foto){setPhotoCircle('pf-ph-circle','pf-ph-icon',p.foto);sv('pf-ph-data',p.foto);}
 }
-function savePerfil(){
-  const users=DB.users(), idx=users.findIndex(x=>x.id===CU.id);
+async function savePerfil(){
+  const users=usersCache(), idx=users.findIndex(x=>x.id===CU.id);
   if(idx<0){toast('Error','err');return}
   const nombre=gv('pf-nombre'); if(!nombre){toast('Ingrese su nombre','err');return}
   users[idx].nombre=nombre; users[idx].cargo=gv('pf-cargo'); users[idx].area=gv('pf-area');
@@ -619,14 +680,14 @@ function savePerfil(){
     cedula:gv('pf-cedula'),tel:gv('pf-tel'),email:gv('pf-email'),
     ingreso:gv('pf-ingreso'),eps:gv('pf-eps'),arl:gv('pf-arl'),
     acud:gv('pf-acud'),acudTel:gv('pf-acud-tel'),foto:gv('pf-ph-data')||users[idx].profile?.foto||''};
-  DB.saveUsers(users); CU=users[idx]; DB.saveSession(CU);
+  await DB.saveUser(users[idx]); _users=users; CU=users[idx]; DB.saveSession(CU);
   toast('Perfil guardado ✓','ok');
 }
 
 // ── EXTRAS LIST ───────────────────────────────────────────────
 function renderExtras(){
   if(!CU) return;
-  const mias=DB.solic().filter(s=>s.userId===CU.id);
+  const mias=solicCache().filter(s=>s.userId===CU.id);
   const pend=mias.filter(s=>s.estado==='pendiente').length;
   const apro=mias.filter(s=>s.estado==='aprobada').length;
   gEl('ex-stats').innerHTML=stCard(mias.length,'Total')+stCard(pend,'Pendientes')+stCard(apro,'Aprobadas')+stCard(mias.filter(s=>s.estado==='cerrada').length,'Cerradas');
@@ -641,7 +702,7 @@ function liHTML(s,showUser){
   const icM={'pendiente':'⏳','aprobada':'✅','rechazada':'❌','cerrada':'🏁'};
   const bdM={'pendiente':'b-pend','aprobada':'b-ok','rechazada':'b-rej','cerrada':'b-close'};
   const etag=s.etapa==='cierre'?`<span class="etag etag-cie">CIERRE</span>`:`<span class="etag etag-sol">SOLICITUD</span>`;
-  const user=showUser?(DB.users().find(u=>u.id===s.userId)?.nombre||s.userName||'—'):'';
+  const user=showUser?(usersCache().find(u=>u.id===s.userId)?.nombre||s.userName||'—'):'';
   return `<div class="li" onclick="openSolModal('${s.id}')">
     <div class="li-ic" style="background:${bgM[s.estado]||'#F3F4F6'}">${icM[s.estado]||'📋'}</div>
     <div class="li-body">
@@ -678,7 +739,7 @@ function showRecargo(){
   if(map[tipo]){el.textContent=map[tipo];el.style.display='block';}
   else el.style.display='none';
 }
-function submitSolicitud(){
+async function submitSolicitud(){
   const fecha=gv('ne-fecha'),entN=gv('ne-ent-normal'),salN=gv('ne-sal-normal');
   const inicioE=gv('ne-inicio-extra'),motivo=gv('ne-motivo');
   const lat=gv('ne-lat'),lng=gv('ne-lng'),foto=gv('ne-ph-data');
@@ -696,13 +757,14 @@ function submitSolicitud(){
     tipo=detectTipo(fecha,inicioE);
     gEl('ne-tipo').value=tipo;
   }
-  const u=DB.users().find(x=>x.id===CU.id)||CU;
+  const u=usersCache().find(x=>x.id===CU.id)||CU;
   const sol={id:'s_'+Date.now(),userId:CU.id,userName:CU.nombre||CU.username,
     area:u.area||CU.area||'Sin área',tipo,fecha,
     entradaNormal:entN,salidaNormal:salN,inicioExtra:inicioE,
     motivo,lat,lng,foto,etapa:'solicitud',estado:'pendiente',
     createdAt:new Date().toISOString()};
-  const solic=DB.solic(); solic.push(sol); DB.saveSolic(solic);
+  await DB.saveSolicDoc(sol);
+  _solic=[...solicCache(), sol];
   addNotif(sol.area);
   // reset
   ['ne-fecha','ne-ent-normal','ne-sal-normal','ne-inicio-extra','ne-motivo','ne-lat','ne-lng','ne-ph-data'].forEach(id=>{const e=gEl(id);if(e)e.value='';});
@@ -717,7 +779,7 @@ function submitSolicitud(){
 // ── CIERRE ────────────────────────────────────────────────────
 function abrirCierre(solId){
   cierreId=solId;
-  const s=DB.solic().find(x=>x.id===solId);
+  const s=solicCache().find(x=>x.id===solId);
   if(!s){toast('Solicitud no encontrada','err');return}
   gEl('c-resumen').innerHTML=`
     <div class="ctitle">📋 Resumen de solicitud aprobada</div>
@@ -736,7 +798,7 @@ function abrirCierre(solId){
 }
 function calcCierre(){
   if(!cierreId) return;
-  const s=DB.solic().find(x=>x.id===cierreId);
+  const s=solicCache().find(x=>x.id===cierreId);
   if(!s) return;
   const sal=gv('c-hora-salida');
   if(!sal) return;
@@ -747,23 +809,24 @@ function calcCierre(){
   gEl('c-aviso-limite').style.display=over?'block':'none';
   gEl('c-total-horas').style.color=over?'var(--err)':'var(--p1)';
 }
-function submitCierre(){
+async function submitCierre(){
   if(!cierreId){toast('Error: no hay solicitud activa','err');return}
   const sal=gv('c-hora-salida'),lat=gv('c-lat'),lng=gv('c-lng'),foto=gv('c-ph-data');
   if(!sal){toast('Ingrese la hora de salida','err');return}
   if(!lat||!lng){toast('Capture la ubicación GPS de cierre','err');return}
   if(!foto){toast('Tome la foto de evidencia','err');return}
-  const solic=DB.solic(), idx=solic.findIndex(x=>x.id===cierreId);
+  const solic=solicCache(), idx=solic.findIndex(x=>x.id===cierreId);
   if(idx<0){toast('Solicitud no encontrada','err');return}
   const s=solic[idx];
   const horas=calcHoras(s.inicioExtra,sal);
-  const u=DB.users().find(x=>x.id===s.userId);
+  const u=usersCache().find(x=>x.id===s.userId);
   const salario=parseFloat(u?.profile?.salario)||SALARIO_MIN;
   const valor=calcValor(salario,s.tipo,horas);
   solic[idx]={...s,etapa:'cierre',estado:'pendiente',
     horaSalida:sal,horasTotales:horas,valorEstimado:valor,salarioBase:salario,
     cierreLat:lat,cierreLng:lng,fotoEvidencia:foto,cierreAt:new Date().toISOString()};
-  DB.saveSolic(solic); addNotif(s.area); cierreId=null;
+  await DB.saveSolicDoc(solic[idx]);
+  _solic=solic; addNotif(s.area); cierreId=null;
   toast('Cierre enviado al líder ✓','ok');
   navTo('s-extras');
 }
@@ -778,7 +841,7 @@ function calcValor(salario,tipo,horas){
 // ── APROBACIONES ──────────────────────────────────────────────
 function renderAprobar(){
   if(!CU) return;
-  const all=DB.solic();
+  const all=solicCache();
   const da=CU.role==='admin'?all:all.filter(s=>s.area===CU.area);
   const pend=da.filter(s=>s.estado==='pendiente');
   const hist=da.filter(s=>s.estado!=='pendiente');
@@ -790,11 +853,11 @@ function renderAprobar(){
 
 // ── MODAL SOLICITUD ───────────────────────────────────────────
 function openSolModal(id){
-  const s=DB.solic().find(x=>x.id===id);
+  const s=solicCache().find(x=>x.id===id);
   if(!s) return;
   const esCierre=s.etapa==='cierre';
   gEl('mo-sol-title').textContent=esCierre?'🏁 Cierre de hora extra':'📋 Solicitud de hora extra';
-  const u=DB.users().find(x=>x.id===s.userId);
+  const u=usersCache().find(x=>x.id===s.userId);
   const salario=parseFloat(u?.profile?.salario)||SALARIO_MIN;
   const esLidAdm=CU.role==='lider'||CU.role==='admin';
   const canApp=(CU.role==='admin')||(CU.role==='lider'&&s.area===CU.area);
@@ -848,14 +911,14 @@ function openSolModal(id){
   gEl('mo-sol').classList.add('open');
 }
 
-function resolver(id,estado){
-  const solic=DB.solic(), idx=solic.findIndex(s=>s.id===id);
+async function resolver(id,estado){
+  const solic=solicCache(), idx=solic.findIndex(s=>s.id===id);
   if(idx<0) return;
   const esCierre=solic[idx].etapa==='cierre';
   solic[idx].estado=(esCierre&&estado==='aprobada')?'cerrada':estado;
   solic[idx].reviewedBy=CU.nombre||CU.username;
   solic[idx].reviewedAt=new Date().toISOString();
-  DB.saveSolic(solic); closeMoById('mo-sol');
+  await DB.saveSolicDoc(solic[idx]); _solic=solic; closeMoById('mo-sol');
   const msg=estado==='aprobada'?(esCierre?'Cierre aprobado ✓':'Solicitud aprobada ✓'):'Rechazado';
   toast(msg,'ok'); updateNotifDot();
   if(CS==='s-aprobar') renderAprobar();
@@ -866,8 +929,8 @@ function resolver(id,estado){
 // ── ADMIN ─────────────────────────────────────────────────────
 function renderAdmin(){
   if(!CU||CU.role!=='admin') return;
-  const users=DB.users().filter(u=>u.role!=='admin');
-  const solic=DB.solic();
+  const users=usersCache().filter(u=>u.role!=='admin');
+  const solic=solicCache();
   gEl('adm-stats').innerHTML=stCard(users.length,'Trabajadores')
     +stCard(solic.filter(s=>s.estado==='pendiente').length,'Pendientes')
     +stCard(solic.filter(s=>s.etapa==='cierre'&&s.estado==='pendiente').length,'Cierres pend.')
@@ -894,11 +957,11 @@ function cambiarCredAdmin(){
   const nu=gv('adm-nu').trim(), np=gv('adm-np').trim();
   if(!nu&&!np){toast('Ingrese usuario o contraseña nueva','err');return}
   if(np&&np.length<6){toast('Contraseña mínimo 6 caracteres','err');return}
-  const users=DB.users(), idx=users.findIndex(u=>u.id===CU.id);
+  const users=usersCache(), idx=users.findIndex(u=>u.id===CU.id);
   if(idx<0){toast('Error','err');return}
   if(nu){if(users.find((u,i)=>u.username===nu&&i!==idx)){toast('Ese usuario ya existe','err');return}users[idx].username=nu;}
   if(np) users[idx].password=np;
-  DB.saveUsers(users); CU=users[idx]; DB.saveSession(CU);
+  await DB.saveUser(users[idx]); _users=users; CU=users[idx]; DB.saveSession(CU);
   gEl('adm-nu').value=''; gEl('adm-np').value='';
   toast('Credenciales actualizadas ✓'+(nu?' · Usuario: '+nu:''),'ok');
 }
@@ -908,36 +971,40 @@ function openModalNewUser(){
   gEl('nu-rol').value='trabajador';
   gEl('mo-user').classList.add('open');
 }
-function crearUsuario(){
+async function crearUsuario(){
   const nombre=gv('nu-nombre'),user=gv('nu-user'),pass=gv('nu-pass'),
     cargo=gv('nu-cargo'),area=gv('nu-area'),rol=gv('nu-rol'),sal=gv('nu-salario');
   if(!nombre||!user||!pass){toast('Complete nombre, usuario y contraseña','err');return}
-  const users=DB.users();
+  const users=usersCache();
   if(users.find(u=>u.username===user)){toast('Ese usuario ya existe','err');return}
-  users.push({id:'u_'+Date.now(),username:user,password:pass,role:rol,
-    nombre,cargo,area,profile:{salario:parseFloat(sal)||SALARIO_MIN},createdAt:new Date().toISOString()});
-  DB.saveUsers(users); closeMoById('mo-user');
+  const nu={id:'u_'+Date.now(),username:user,password:pass,role:rol,
+    nombre,cargo,area,profile:{salario:parseFloat(sal)||SALARIO_MIN},createdAt:new Date().toISOString()};
+  await DB.saveUser(nu);
+  _users=[...users, nu];
+  closeMoById('mo-user');
   toast('Usuario '+user+' creado ✓','ok'); renderAdmin();
 }
-function editUser(id){
-  const u=DB.users().find(x=>x.id===id); if(!u) return;
+async function editUser(id){
+  const u=usersCache().find(x=>x.id===id); if(!u) return;
   const n=prompt('Nombre (actual: '+u.nombre+'):');
   const p=prompt('Nueva contraseña (vacío = mantener):');
   const r=prompt('Rol — trabajador o lider (actual: '+u.role+'):');
   const a=prompt('Área (actual: '+(u.area||'')+'):');
   const s=prompt('Salario mensual COP (actual: '+(u.profile?.salario||SALARIO_MIN)+'):');
-  const users=DB.users(), idx=users.findIndex(x=>x.id===id);
+  const users=usersCache(), idx=users.findIndex(x=>x.id===id);
   if(n) users[idx].nombre=n;
   if(p&&p.length>=4) users[idx].password=p;
   if(r==='lider'||r==='trabajador') users[idx].role=r;
   if(a!==null&&a!=='') users[idx].area=a;
   if(s&&!isNaN(parseFloat(s))) users[idx].profile={...users[idx].profile,salario:parseFloat(s)};
-  DB.saveUsers(users); toast('Usuario actualizado ✓','ok'); renderAdmin();
+  await DB.saveUser(users[idx]); _users=users;
+  toast('Usuario actualizado ✓','ok'); renderAdmin();
 }
-function delUser(id){
-  const u=DB.users().find(x=>x.id===id); if(!u) return;
+async function delUser(id){
+  const u=usersCache().find(x=>x.id===id); if(!u) return;
   if(!confirm('¿Eliminar a '+u.nombre+'? Esta acción no se puede deshacer.')) return;
-  DB.saveUsers(DB.users().filter(x=>x.id!==id));
+  await DB.deleteUser(id);
+  _users=usersCache().filter(x=>x.id!==id);
   toast('Usuario eliminado','ok'); renderAdmin();
 }
 
@@ -989,10 +1056,10 @@ function addNotif(area){
 function updateNotifDot(){
   const dot=gEl('notif-dot'); if(!dot||!CU) return;
   if(CU.role==='admin'){
-    const pend=DB.solic().filter(s=>s.estado==='pendiente').length;
+    const pend=solicCache().filter(s=>s.estado==='pendiente').length;
     dot.style.display=pend>0?'block':'none';
   } else if(CU.role==='lider'){
-    const pend=DB.solic().filter(s=>s.estado==='pendiente'&&s.area===CU.area).length;
+    const pend=solicCache().filter(s=>s.estado==='pendiente'&&s.area===CU.area).length;
     dot.style.display=pend>0?'block':'none';
   } else {
     dot.style.display='none';
