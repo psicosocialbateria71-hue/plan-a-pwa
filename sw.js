@@ -12,10 +12,8 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Solo cachear GET — nunca POST (Firebase usa POST)
 self.addEventListener('fetch', e => {
   if(e.request.method !== 'GET') return;
-  // No cachear peticiones de Firebase
   if(e.request.url.includes('firestore.googleapis.com')) return;
   if(e.request.url.includes('firebase')) return;
   e.respondWith(
