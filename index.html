@@ -629,8 +629,8 @@ async function renderHome(){
       +stCard(all.filter(s=>s.etapa==='cierre'&&s.estado==='pendiente').length,'Cierres')
       +stCard(all.filter(s=>s.estado==='cerrada').length,'Cerradas');
   } else if(CU.role==='lider'){
-    const da = all.filter(s=>s.area===CU.area);
-    sg.innerHTML = stCard(da.filter(s=>s.estado==='pendiente').length,'Pendientes área')
+    const da = all;
+    sg.innerHTML = stCard(da.filter(s=>s.estado==='pendiente').length,'Pendientes')
       +stCard(da.filter(s=>s.estado!=='pendiente').length,'Procesadas')
       +stCard(mias.length,'Mis solicitudes')
       +stCard(mias.filter(s=>s.estado==='aprobada').length,'Mis aprobadas');
@@ -658,9 +658,7 @@ async function renderHome(){
   const pc = document.getElementById('h-pend-card');
   const plist = document.getElementById('h-pend-list');
   if(CU.role==='lider'||CU.role==='admin'){
-    const pend = CU.role==='admin'
-      ? all.filter(s=>s.estado==='pendiente')
-      : all.filter(s=>s.estado==='pendiente'&&s.area===CU.area);
+    const pend = all.filter(s=>s.estado==='pendiente');
     if(pend.length>0){
       pl.style.display=''; pc.style.display='';
       plist.innerHTML = pend.slice(0,3).map(s=>solItemHTML(s,true)).join('');
@@ -894,7 +892,7 @@ function calcValor(salario, tipo, horas){
 async function renderAprobar(){
   if(!CU) return;
   const all = await fbGetSolic();
-  const da = CU.role==='admin' ? all : all.filter(s=>s.area===CU.area);
+  const da = all; // Líder y admin ven todas las solicitudes
   const pend = da.filter(s=>s.estado==='pendiente');
   const hist = da.filter(s=>s.estado!=='pendiente');
   const lEl = gEl('ap-list');
@@ -1025,7 +1023,7 @@ async function openSolModal(id){
     const esCierre = s.etapa==='cierre';
     gEl('mo-sol-title').textContent = esCierre?'🏁 Cierre de hora extra':'📋 Solicitud de hora extra';
     const esLidAdm = CU.role==='lider'||CU.role==='admin';
-    const canApp = (CU.role==='admin')||(CU.role==='lider'&&s.area===CU.area);
+    const canApp = (CU.role==='admin')||(CU.role==='lider');
     const puedesCerrar = s.etapa==='solicitud'&&s.estado==='aprobada'&&s.userId===CU.id;
     let valor='';
     if(esLidAdm && s.valorEstimado){
@@ -1094,9 +1092,7 @@ async function updateNotifDot(){
   if(!CU) return;
   try{
     const all = await fbGetSolic();
-    const pend = CU.role==='admin'
-      ? all.filter(s=>s.estado==='pendiente').length
-      : all.filter(s=>s.estado==='pendiente'&&s.area===CU.area).length;
+    const pend = all.filter(s=>s.estado==='pendiente').length;
     const dot = gEl('notif-dot');
     if(dot) dot.classList.toggle('on', pend>0);
   }catch(e){}
