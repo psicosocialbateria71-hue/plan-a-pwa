@@ -474,7 +474,7 @@ input,select,textarea,button{font-family:inherit}
 <script>
 // ── CONSTANTS ────────────────────────────────────────────────
 const RECARGOS={'Diurna':0.25,'Nocturna':0.75,'Dominical/Festiva Diurna':1.00,'Dominical/Festiva Nocturna':1.50};
-const SALARIO_MIN=1423500;
+const SALARIO_MIN=1423500; // Salario mínimo 2025 Colombia
 
 // ── DB ────────────────────────────────────────────────────────
 const DB={
@@ -680,12 +680,22 @@ function showRecargo(){
 }
 function submitSolicitud(){
   const fecha=gv('ne-fecha'),entN=gv('ne-ent-normal'),salN=gv('ne-sal-normal');
-  const inicioE=gv('ne-inicio-extra'),tipo=gv('ne-tipo'),motivo=gv('ne-motivo');
+  const inicioE=gv('ne-inicio-extra'),motivo=gv('ne-motivo');
   const lat=gv('ne-lat'),lng=gv('ne-lng'),foto=gv('ne-ph-data');
-  if(!fecha||!entN||!salN||!inicioE||!tipo){toast('Complete todos los campos','err');return}
+  // Validar campos básicos
+  if(!fecha){toast('Seleccione la fecha','err');return}
+  if(!entN){toast('Ingrese la hora de entrada jornada normal','err');return}
+  if(!salN){toast('Ingrese la hora de salida jornada normal','err');return}
+  if(!inicioE){toast('Ingrese la hora de inicio de hora extra','err');return}
   if(!motivo){toast('Ingrese el motivo de la solicitud','err');return}
   if(!lat||!lng){toast('Capture la ubicación GPS','err');return}
-  if(!foto){toast('Tome una foto del lugar/equipo','err');return}
+  if(!foto){toast('Tome una foto del lugar o equipo','err');return}
+  // Auto-detectar tipo si no fue seleccionado manualmente
+  let tipo=gv('ne-tipo');
+  if(!tipo){
+    tipo=detectTipo(fecha,inicioE);
+    gEl('ne-tipo').value=tipo;
+  }
   const u=DB.users().find(x=>x.id===CU.id)||CU;
   const sol={id:'s_'+Date.now(),userId:CU.id,userName:CU.nombre||CU.username,
     area:u.area||CU.area||'Sin área',tipo,fecha,
@@ -760,7 +770,7 @@ function submitCierre(){
 
 // ── CALCULAR VALOR ────────────────────────────────────────────
 function calcValor(salario,tipo,horas){
-  const vh=salario/240; // valor hora ordinaria (30 días × 8 horas)
+  const vh=salario/230; // valor hora ordinaria (jornada 46h/semana × 5 semanas, Ley 2101/2021 vigente 2025)
   const rec=RECARGOS[tipo]||0.25;
   return Math.round(vh*(1+rec)*parseFloat(horas));
 }
@@ -808,7 +818,7 @@ function openSolModal(id){
     </div>`;
     if(esLidAdm&&s.horasTotales){
       const pct=Math.round((RECARGOS[s.tipo]||0.25)*100);
-      const vh=Math.round(salario/240);
+      const vh=Math.round(salario/230);
       html+=`<div class="val-card">
         <div style="font-size:10px;color:var(--ok);font-weight:700;margin-bottom:6px">💰 VALOR ESTIMADO (visible solo líderes y admin)</div>
         <div style="font-size:26px;font-weight:800;color:var(--ok)">${fmtCOP(s.valorEstimado||0)}</div>
