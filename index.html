@@ -868,12 +868,12 @@ async function submitCierre(){
     const u = users.find(x=>x.id===s.userId);
     const salario = parseFloat(u?.profile?.salario)||SALARIO_MIN;
     const valor = calcValor(salario, s.tipo, horas);
-    await db.collection('solicitudes').doc(cierreId).update({
+    await db.collection('solicitudes').doc(cierreId).set({
       etapa:'cierre', estado:'pendiente',
       horaSalida:sal, horasTotales:horas, valorEstimado:valor, salarioBase:salario,
       cierreLat:lat, cierreLng:lng, fotoEvidencia:foto,
       cierreAt:new Date().toISOString()
-    });
+    }, {merge:true});
     cierreId = null;
     toast('Cierre enviado al líder ✓','ok');
     await navTo('s-extras');
@@ -1073,11 +1073,11 @@ async function resolver(id, estado){
     const s = snap.data();
     const esCierre = s.etapa==='cierre';
     const nuevoEstado = (esCierre&&estado==='aprobada')?'cerrada':estado;
-    await db.collection('solicitudes').doc(id).update({
+    await db.collection('solicitudes').doc(id).set({
       estado:nuevoEstado,
       reviewedBy:CU.nombre||CU.username,
       reviewedAt:new Date().toISOString()
-    });
+    },{merge:true});
     closeMo('mo-sol');
     const msg = estado==='aprobada'?(esCierre?'Cierre aprobado ✓':'Solicitud aprobada ✓'):'Rechazado';
     toast(msg,'ok');
