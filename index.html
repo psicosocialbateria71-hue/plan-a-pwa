@@ -10,180 +10,195 @@
 <meta name="apple-mobile-web-app-title" content="Plan A">
 <title>Plan A — Gestión de Personal</title>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{height:100%}
-body{height:100%;font-family:'Inter',system-ui,sans-serif;background:#F0F2F8;color:#1a1a2e;overscroll-behavior:none}
+html,body{height:100%;font-family:'Inter',system-ui,sans-serif;background:#F0F2F8;color:#1a1a2e;overscroll-behavior:none}
 input,select,textarea,button{font-family:inherit}
+img{max-width:100%;display:block}
 :root{
   --p1:#8B3FA8;--p2:#C2419A;--p3:#2563EB;
-  --grad:linear-gradient(135deg,#8B3FA8,#C2419A,#2563EB);
-  --bg:#F0F2F8;--surf:#fff;
+  --grad:linear-gradient(135deg,var(--p1),var(--p2),var(--p3));
+  --bg:#F0F2F8;--surface:#fff;--text:#1a1a2e;--muted:#6B7280;--border:#E5E7EB;
   --ok:#10B981;--warn:#F59E0B;--err:#EF4444;
-  --muted:#6B7280;--border:#E5E7EB;--text:#1a1a2e;
-  --r:14px;--rs:8px;
-  --sh:0 2px 12px rgba(139,63,168,.10),0 1px 3px rgba(0,0,0,.06);
-  --nb:72px;
+  --radius:14px;--radius-sm:8px;
+  --shadow:0 2px 12px rgba(139,63,168,.10),0 1px 3px rgba(0,0,0,.06);
+  --nav-h:68px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,20px);
 }
-/* ── APP SHELL ── */
-#app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
-/* ── LOGIN OVERLAY ── */
-#login-overlay{position:fixed;inset:0;z-index:500;background:var(--grad);display:flex;flex-direction:column;max-width:480px;margin:0 auto;left:0;right:0}
-#login-overlay.hidden{display:none}
-.login-top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px 20px;color:#fff}
-.login-logo-circle{width:80px;height:80px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:36px;border:2px solid rgba(255,255,255,.35)}
-.login-top h1{font-size:28px;font-weight:800;margin-bottom:4px}
-.login-top p{font-size:13px;opacity:.8}
-.login-card{background:#fff;border-radius:28px 28px 0 0;padding:32px 24px 48px;box-shadow:0 -8px 40px rgba(0,0,0,.15)}
-.login-card h2{font-size:20px;font-weight:800;margin-bottom:4px}
-.login-card .sub{font-size:13px;color:var(--muted);margin-bottom:22px}
-/* ── SCREENS ── */
-.screen{display:none;padding-bottom:calc(var(--nb) + 50px);min-height:100vh}
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative;background:var(--bg)}
+.screen{flex:1;overflow-y:auto;padding-bottom:calc(var(--nav-h) + var(--safe-bot) + 16px);display:none;padding-top:calc(var(--safe-top))}
 .screen.active{display:block}
-/* ── NAV ── */
-#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--border);display:none;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+
+/* LOGIN */
+#s-login{background:var(--grad);min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:0;padding-top:0}
+.login-top{text-align:center;padding:60px 20px 30px;color:white}
+.login-circle{width:80px;height:80px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:36px;border:2px solid rgba(255,255,255,.3)}
+.login-top h1{font-size:26px;font-weight:800;margin-bottom:4px}
+.login-top p{font-size:13px;opacity:.8}
+.login-card{background:white;border-radius:24px 24px 0 0;padding:32px 24px 48px;box-shadow:0 -8px 40px rgba(0,0,0,.15)}
+.login-card h2{font-size:20px;font-weight:800;margin-bottom:4px}
+.login-card p{font-size:14px;color:var(--muted);margin-bottom:24px}
+
+/* NAV */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:calc(var(--nav-h) + var(--safe-bot));background:var(--surface);border-top:1px solid var(--border);display:none;grid-template-columns:repeat(3,1fr);align-items:flex-start;padding-top:8px;padding-bottom:var(--safe-bot);box-shadow:0 -2px 12px rgba(0,0,0,.08);z-index:100}
 #nav.on{display:grid}
-#nav.cols3{grid-template-columns:repeat(3,1fr)}
 #nav.cols4{grid-template-columns:repeat(4,1fr)}
-.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 14px;border:none;background:none;cursor:pointer}
-.ni .ic{font-size:22px;line-height:1;transition:transform .2s}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 4px;cursor:pointer;border:none;background:none;position:relative}
+.ni .ic{font-size:22px;line-height:1}
 .ni .lb{font-size:10px;font-weight:600;color:var(--muted)}
 .ni.on .lb{color:var(--p1)}
 .ni.on .ic{transform:scale(1.1)}
-/* ── TOPBAR ── */
-.tb{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.tb-title{font-weight:700;font-size:16px;flex:1}
-.tb-sub{font-size:11px;color:var(--muted)}
-.back{width:34px;height:34px;border:none;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0}
-/* ── HERO ── */
-.hero{background:var(--grad);color:#fff;padding:22px 18px 20px;position:relative;overflow:hidden}
+.notif-dot{position:absolute;top:0;right:calc(50% - 18px);width:8px;height:8px;background:var(--err);border-radius:50%;display:none}
+.notif-dot.on{display:block}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.topbar-title{font-weight:700;font-size:16px;flex:1}
+.topbar-sub{font-size:12px;color:var(--muted)}
+.back-btn{width:34px;height:34px;border:none;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0}
+
+/* HERO */
+.hero{background:var(--grad);color:white;padding:22px 18px 18px;position:relative;overflow:hidden}
 .hero::after{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.07)}
-.hero-lbl{font-size:11px;font-weight:600;opacity:.75;text-transform:uppercase;letter-spacing:.05em}
-.hero-name{font-size:22px;font-weight:800;line-height:1.2;margin-top:2px}
-.hero-role{font-size:12px;opacity:.7;margin-top:3px}
-/* ── CARD ── */
-.card{background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin:0 14px 12px}
-.ctitle{font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-/* ── FORM ── */
+.hero-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;opacity:.8;margin-bottom:3px}
+.hero-name{font-size:22px;font-weight:800;line-height:1.2}
+.hero-role{font-size:13px;opacity:.75;margin-top:3px}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin:0 14px 12px}
+.card-title{font-weight:700;font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 4px}
+.stat-card{background:var(--surface);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.stat-num{font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+
+/* FORM */
 .field{margin-bottom:13px}
-.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
-.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:11px 13px;font-size:15px;color:var(--text);-webkit-appearance:none;transition:border-color .2s}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--p1);background:#fff}
-.field textarea{resize:none;min-height:78px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hint{font-size:11px;color:var(--muted);margin-top:3px}
-/* ── BUTTONS ── */
-.btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:14px;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
-.btn:active{transform:scale(.97)}
-.btn-p{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(139,63,168,.3)}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;font-size:15px;color:var(--text);-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--p1);background:white}
+.field textarea{resize:none;min-height:76px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:12px;color:var(--p1);font-weight:600;margin-top:6px;padding:8px 10px;background:#F5F0FF;border-radius:6px}
+
+/* BUTTONS */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-p{background:var(--grad);color:white;box-shadow:0 4px 12px rgba(139,63,168,.3)}
+.btn-p:active{transform:scale(.98)}
 .btn-s{background:var(--bg);color:var(--p1);border:1.5px solid var(--p1)}
-.btn-ok{background:var(--ok);color:#fff}
-.btn-err{background:var(--err);color:#fff}
-.btn-sm{padding:8px 14px;font-size:12px;width:auto;border-radius:20px;font-weight:700}
-/* ── BADGE ── */
-.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.btn-ok{background:var(--ok);color:white}
+.btn-err{background:var(--err);color:white}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;border-radius:20px;font-weight:700;border:none;cursor:pointer}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
 .b-pend{background:#FEF3C7;color:#B45309}
-.b-ok{background:#D1FAE5;color:#065F46}
-.b-rej{background:#FEE2E2;color:#991B1B}
-.b-close{background:#DBEAFE;color:#1E40AF}
-/* ── STATS ── */
-.sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 4px}
-.sc{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--sh)}
-.sn{font-size:26px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
-.sl{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
-/* ── LIST ITEM ── */
-.li{display:flex;align-items:flex-start;gap:11px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
-.li:last-child{border-bottom:none}
-.li-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.li-body{flex:1;min-width:0}
-.li-title{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.li-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.li-user{font-size:10px;color:var(--p1);font-weight:700;margin-bottom:1px}
-/* ── WORKER ITEM ── */
-.wi{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)}
-.wi:last-child{border-bottom:none}
-.wav{width:42px;height:42px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden}
-.wav img{width:100%;height:100%;object-fit:cover}
-/* ── PHOTO ── */
-.ph-circle{width:86px;height:86px;border-radius:50%;background:var(--bg);border:3px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;cursor:pointer;flex-shrink:0;transition:border-color .2s}
-.ph-circle.has{border-style:solid;border-color:var(--p1)}
-.ph-circle img{width:100%;height:100%;object-fit:cover}
-.ph-circle:hover{border-color:var(--p1)}
-/* ── GPS ── */
-.gps-box{background:var(--bg);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:center;gap:9px;font-size:12px}
-.gps-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.gps-dot.on{background:var(--ok);animation:pulse 1.4s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-/* ── MODAL ── */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
-.mo.open{display:flex}
-.mb{background:#fff;border-radius:24px 24px 0 0;padding:26px 22px 48px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:su .28s ease}
-@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.mt{font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:16px}
-.mc{width:30px;height:30px;border:none;background:var(--bg);border-radius:50%;cursor:pointer;font-size:15px;margin-left:auto;display:flex;align-items:center;justify-content:center}
-/* ── DETAIL ROW ── */
+.b-apro{background:#D1FAE5;color:#065F46}
+.b-rech{background:#FEE2E2;color:#991B1B}
+.b-cerr{background:#DBEAFE;color:#1E40AF}
+
+/* SOL ITEM */
+.sol-item{padding:13px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.sol-item:last-child{border-bottom:none}
+.sol-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.sol-body{flex:1;min-width:0}
+.sol-title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sol-meta{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* WORKER ITEM */
+.w-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.w-item:last-child{border-bottom:none}
+.w-av{width:44px;height:44px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden}
+.w-av img{width:100%;height:100%;object-fit:cover}
+.w-info{flex:1;min-width:0}
+.w-name{font-weight:600;font-size:14px}
+.w-role{font-size:12px;color:var(--muted)}
+.w-area{font-size:11px;color:var(--p1);font-weight:600;margin-top:1px}
+
+/* GPS */
+.gps-box{background:var(--bg);border-radius:var(--radius-sm);padding:11px 13px;display:flex;align-items:center;gap:10px;font-size:13px}
+.gps-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.gps-dot.on{background:var(--ok);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* PHOTO */
+.photo-area{display:flex;gap:12px;align-items:center}
+.photo-circle{width:72px;height:72px;border-radius:50%;background:var(--bg);border:3px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;cursor:pointer;flex-shrink:0}
+.photo-circle.has-photo{border-style:solid;border-color:var(--p1)}
+.photo-circle img{width:100%;height:100%;object-fit:cover}
+
+/* MODAL */
+.mo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.mo-overlay.open{display:flex}
+.mo-box{background:white;border-radius:24px 24px 0 0;padding:24px 20px calc(24px + var(--safe-bot));width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mo-title{font-size:17px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.mo-close{width:30px;height:30px;border:none;background:var(--bg);border-radius:50%;cursor:pointer;font-size:16px;margin-left:auto}
 .dr{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--border)}
 .dr:last-child{border-bottom:none}
-.dk{font-size:11px;color:var(--muted);font-weight:700;flex-shrink:0;margin-right:10px;text-transform:uppercase;letter-spacing:.03em}
-.dv{font-size:12px;font-weight:500;text-align:right;max-width:60%;word-break:break-word}
-/* ── SECTION LABEL ── */
-.sl-sec{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:14px 14px 5px}
-/* ── TOAST ── */
-#toast{position:fixed;bottom:calc(var(--nb) + 60px);left:50%;transform:translateX(-50%) translateY(70px);background:#1a1a2e;color:#fff;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:999;transition:transform .28s;white-space:nowrap;max-width:88vw;text-align:center}
+.dk{font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;margin-right:10px;text-transform:uppercase}
+.dv{font-size:13px;font-weight:500;text-align:right;word-break:break-word;max-width:60%}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bot) + 12px);left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:white;padding:11px 20px;border-radius:30px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;transition:transform .3s;white-space:nowrap;max-width:92vw;text-align:center}
 #toast.show{transform:translateX(-50%) translateY(0)}
 #toast.ok{background:var(--ok)}
 #toast.err{background:var(--err)}
-/* ── NOTIFICATION DOT ── */
-.notif-dot{width:8px;height:8px;background:var(--err);border-radius:50%;position:absolute;top:4px;right:2px}
-/* ── INFO BOX ── */
-.ibox{border-radius:var(--rs);padding:12px 14px;font-size:12px;line-height:1.65;margin-bottom:12px}
-.ibox-purple{background:#EDE9FE;border-left:3px solid #8B3FA8;color:#4C1D95}
-.ibox-yellow{background:#FFFBEB;border-left:3px solid var(--warn);color:#92400E}
-.ibox-green{background:#F0FDF4;border-left:3px solid var(--ok);color:#065F46}
-/* ── EMPTY ── */
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:9999;display:none}
+#loading.on{display:flex}
+.spin{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--p1);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
 .empty{text-align:center;padding:36px 16px;color:var(--muted)}
 .empty-ic{font-size:44px;margin-bottom:10px}
-.empty-t{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
-/* ── VALUE CARD ── */
-.val-card{background:#F0FDF4;border-radius:10px;padding:14px;border:1px solid #BBF7D0;margin:10px 0}
-/* ── ETAPA TAG ── */
-.etag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;margin-left:4px}
-.etag-sol{background:#EDE9FE;color:#5B21B6}
-.etag-cie{background:#DBEAFE;color:#1E40AF}
-@media(min-width:480px){#app,#login-overlay,#nav{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
+.empty-t{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;padding:14px 14px 5px}
+
+/* SHORTCUTS GRID */
+.shortcuts{padding:0 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shortcut-card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);cursor:pointer}
+.shortcut-card:active{transform:scale(.97)}
+
+@media(min-width:480px){#app{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
 </style>
 </head>
 <body>
+<div id="loading"><div class="spin"></div></div>
 
-<!-- ══ LOGIN OVERLAY ══════════════════════════════════════════ -->
-<div id="login-overlay">
+<div id="app">
+
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
   <div class="login-top">
-    <div class="login-logo-circle">🏢</div>
+    <div class="login-circle">🏢</div>
     <h1>Plan A</h1>
     <p>Soluciones Organizacionales</p>
   </div>
   <div class="login-card">
     <h2>Bienvenido</h2>
-    <div class="sub">Ingrese con su usuario y contraseña</div>
-    <div class="field">
-      <label>Usuario</label>
-      <input id="l-user" type="text" placeholder="Ej: jperez" autocomplete="username" autocapitalize="none">
+    <p>Ingrese con su usuario y contraseña</p>
+    <div class="field"><label>Usuario</label>
+      <input type="text" id="l-user" placeholder="Ej: jperez" autocomplete="username" autocapitalize="none">
     </div>
-    <div class="field">
-      <label>Contraseña</label>
-      <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+    <div class="field"><label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="btn btn-p" onclick="doLogin()">Ingresar</button>
-    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--muted)">¿Olvidó su contraseña? Contacte al administrador</div>
+    <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">¿Olvidó su contraseña? Contacte al administrador</p>
   </div>
 </div>
 
-<!-- ══ APP ════════════════════════════════════════════════════ -->
-<div id="app">
-
-<!-- ── HOME ───────────────────────────────────────────────── -->
+<!-- HOME -->
 <div id="s-home" class="screen">
   <div class="hero">
     <div class="hero-lbl">Hola,</div>
@@ -191,779 +206,752 @@ input,select,textarea,button{font-family:inherit}
     <div class="hero-role" id="h-role">—</div>
   </div>
   <div style="padding:14px 0 0">
-    <div class="sg" id="h-stats"></div>
-    <div class="sl-sec">Accesos rápidos</div>
-    <div id="h-shortcuts" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px"></div>
-    <div class="sl-sec" id="h-pend-lbl" style="display:none">Pendientes de aprobación</div>
+    <div class="stats-grid" id="h-stats"></div>
+    <div class="sec-lbl">Accesos rápidos</div>
+    <div class="shortcuts" id="h-shortcuts"></div>
+    <div class="sec-lbl" id="h-pend-lbl" style="display:none">Pendientes de aprobación</div>
     <div class="card" id="h-pend-card" style="display:none"><div id="h-pend-list"></div></div>
-    <div style="padding:0 14px;margin-top:8px">
+    <div style="padding:14px 14px 0">
       <button class="btn btn-s" onclick="logout()">Cerrar sesión</button>
     </div>
   </div>
 </div>
 
-<!-- ── PERFIL ──────────────────────────────────────────────── -->
+<!-- PERFIL -->
 <div id="s-perfil" class="screen">
-  <div class="tb">
-    <div class="tb-title">👤 Mi Perfil</div>
+  <div class="topbar">
+    <div class="topbar-title">👤 Mi Perfil</div>
     <button class="btn btn-sm btn-p" onclick="savePerfil()">Guardar</button>
   </div>
   <div style="padding:14px">
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📸 Foto de perfil</div>
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="ph-circle" id="pf-ph-circle" onclick="triggerPhoto('pf-ph-input')">
+      <div class="card-title">📸 Foto de perfil</div>
+      <div class="photo-area">
+        <div class="photo-circle" id="pf-ph-circle" onclick="triggerPhoto('pf-ph-input')">
           <span id="pf-ph-icon">👤</span>
         </div>
         <div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Toca para cambiar</div>
-          <div style="font-size:11px;color:var(--muted)">Foto de identificación del trabajador</div>
-          <button class="btn btn-sm btn-s" style="margin-top:8px" onclick="triggerPhoto('pf-ph-input')">Tomar foto</button>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Toca para cambiar foto</div>
+          <button class="btn btn-sm btn-s" onclick="triggerPhoto('pf-ph-input')">Seleccionar</button>
         </div>
       </div>
-      <input type="file" id="pf-ph-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,'pf-ph-circle','pf-ph-icon','pf-ph-data','👤')">
+      <input type="file" id="pf-ph-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,'pf-ph-circle','pf-ph-icon','pf-ph-data')">
       <input type="hidden" id="pf-ph-data">
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📋 Datos personales</div>
-      <div class="row2">
-        <div class="field"><label>Nombre completo</label><input id="pf-nombre" type="text" placeholder="Nombre y apellido"></div>
-        <div class="field"><label>Cédula</label><input id="pf-cedula" type="text" inputmode="numeric" placeholder="N° documento"></div>
+      <div class="card-title">📋 Datos personales</div>
+      <div class="field-row">
+        <div class="field"><label>Nombre</label><input type="text" id="pf-nombre" placeholder="Nombre completo"></div>
+        <div class="field"><label>Cédula</label><input type="text" id="pf-cedula" inputmode="numeric"></div>
       </div>
-      <div class="row2">
-        <div class="field"><label>Cargo</label><input id="pf-cargo" type="text" placeholder="Ej: Auxiliar"></div>
-        <div class="field"><label>Área</label><input id="pf-area" type="text" placeholder="Ej: Salud"></div>
+      <div class="field-row">
+        <div class="field"><label>Cargo</label><input type="text" id="pf-cargo" placeholder="Ej: Auxiliar"></div>
+        <div class="field"><label>Área</label><input type="text" id="pf-area" placeholder="Ej: Salud"></div>
       </div>
-      <div class="row2">
-        <div class="field"><label>Teléfono</label><input id="pf-tel" type="tel" placeholder="3XX XXX XXXX"></div>
-        <div class="field"><label>Correo</label><input id="pf-email" type="email" placeholder="correo@empresa.com"></div>
+      <div class="field-row">
+        <div class="field"><label>Teléfono</label><input type="tel" id="pf-tel" placeholder="3XX XXX XXXX"></div>
+        <div class="field"><label>Correo</label><input type="email" id="pf-email" placeholder="correo@empresa.com"></div>
       </div>
-      <div class="field"><label>Fecha de ingreso</label><input id="pf-ingreso" type="date"></div>
+      <div class="field"><label>Fecha de ingreso</label><input type="date" id="pf-ingreso"></div>
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">🏥 Seguridad Social</div>
-      <div class="row2">
-        <div class="field"><label>EPS</label><input id="pf-eps" type="text" placeholder="Nombre EPS"></div>
-        <div class="field"><label>ARL</label><input id="pf-arl" type="text" placeholder="Nombre ARL"></div>
+      <div class="card-title">🏥 Seguridad Social</div>
+      <div class="field-row">
+        <div class="field"><label>EPS</label><input type="text" id="pf-eps"></div>
+        <div class="field"><label>ARL</label><input type="text" id="pf-arl"></div>
       </div>
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📞 Contacto de emergencia</div>
-      <div class="field"><label>Nombre del acudiente</label><input id="pf-acud" type="text" placeholder="Nombre y apellido"></div>
-      <div class="field"><label>Teléfono acudiente</label><input id="pf-acud-tel" type="tel" placeholder="3XX XXX XXXX"></div>
+      <div class="card-title">📞 Contacto de emergencia</div>
+      <div class="field"><label>Nombre acudiente</label><input type="text" id="pf-acud"></div>
+      <div class="field"><label>Teléfono acudiente</label><input type="tel" id="pf-acud-tel" placeholder="3XX XXX XXXX"></div>
     </div>
   </div>
 </div>
 
-<!-- ── HORAS EXTRAS (lista) ────────────────────────────────── -->
+<!-- HORAS EXTRAS LIST -->
 <div id="s-extras" class="screen">
-  <div class="tb">
-    <div class="tb-title">⏰ Horas Extras</div>
+  <div class="topbar">
+    <div class="topbar-title">⏰ Horas Extras</div>
     <button class="btn btn-sm btn-p" onclick="navTo('s-nueva')">+ Nueva</button>
   </div>
   <div style="padding:14px 0">
-    <div class="ibox ibox-purple" style="margin:0 14px 10px">
-      <b>Recargos según Código Sustantivo del Trabajo (Colombia):</b><br>
-      🟡 <b>Diurna</b> Lun–Sáb 6am–7pm → +25% sobre hora ordinaria<br>
-      🔵 <b>Nocturna</b> Lun–Sáb 7pm–6am → +75%<br>
-      🟠 <b>Dominical/Festiva diurna</b> 6am–7pm → +100%<br>
-      🔴 <b>Dominical/Festiva nocturna</b> 7pm–6am → +150%<br>
-      <b>Límite legal:</b> máx. 2h/día · máx. 12h/semana (Art.167 CST · Ley 50/90)
-    </div>
-    <div class="sg" id="ex-stats"></div>
-    <div class="sl-sec">Mis solicitudes</div>
-    <div class="card" style="margin-top:0" id="ex-list">
-      <div class="empty"><div class="empty-ic">📋</div><div class="empty-t">Sin solicitudes</div><div>Toca "+ Nueva" para solicitar horas extras</div></div>
-    </div>
+    <div class="stats-grid" id="ex-stats"></div>
+    <div class="sec-lbl">Mis solicitudes</div>
+    <div class="card" style="margin-top:0" id="ex-list"></div>
   </div>
 </div>
 
-<!-- ── NUEVA SOLICITUD (Etapa 1) ───────────────────────────── -->
+<!-- NUEVA SOLICITUD -->
 <div id="s-nueva" class="screen">
-  <div class="tb">
-    <button class="back" onclick="navTo('s-extras')">←</button>
-    <div><div class="tb-title">Solicitud de hora extra</div><div class="tb-sub">Etapa 1 — Antes de iniciar</div></div>
+  <div class="topbar">
+    <button class="back-btn" onclick="navTo('s-extras')">←</button>
+    <div><div class="topbar-title">Nueva solicitud</div><div class="topbar-sub">Hora extra — Etapa 1</div></div>
   </div>
   <div style="padding:14px">
-    <div class="ibox ibox-yellow">
-      ⚠️ Complete esta solicitud <b>ANTES de iniciar</b> las horas extras. Su líder debe aprobarla.
-    </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📅 Jornada del día</div>
+      <div class="card-title">📅 Jornada y hora extra</div>
       <div class="field"><label>Fecha</label><input type="date" id="ne-fecha"></div>
-      <div class="row2">
+      <div class="field-row">
         <div class="field"><label>Entrada jornada normal</label><input type="time" id="ne-ent-normal"></div>
         <div class="field"><label>Salida jornada normal</label><input type="time" id="ne-sal-normal"></div>
       </div>
-    </div>
-    <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">⏰ Hora extra solicitada</div>
-      <div class="field">
-        <label>Hora de inicio de la hora extra</label>
+      <div class="field"><label>Hora de inicio hora extra</label>
         <input type="time" id="ne-inicio-extra" onchange="autoDetectTipo()">
-        <div class="hint">Normalmente igual a la hora de salida de su jornada normal</div>
       </div>
-      <div class="field">
-        <label>Tipo detectado automáticamente</label>
+      <div class="field"><label>Tipo de hora extra</label>
         <select id="ne-tipo" onchange="showRecargo()">
-          <option value="">Se detecta al ingresar la hora de inicio</option>
+          <option value="">Seleccionar tipo...</option>
           <option value="Diurna">🟡 Diurna — Lun–Sáb 6:00am–7:00pm (+25%)</option>
           <option value="Nocturna">🔵 Nocturna — Lun–Sáb 7:00pm–6:00am (+75%)</option>
           <option value="Dominical/Festiva Diurna">🟠 Dominical/Festiva diurna (+100%)</option>
           <option value="Dominical/Festiva Nocturna">🔴 Dominical/Festiva nocturna (+150%)</option>
         </select>
-        <div id="ne-recargo-hint" class="hint" style="color:var(--p1);font-weight:600;display:none"></div>
       </div>
-      <div class="field">
-        <label>Motivo de la solicitud</label>
-        <textarea id="ne-motivo" placeholder="Describa la actividad a realizar, el área y el responsable que autorizó verbalmente..."></textarea>
+      <div id="ne-recargo-hint" style="display:none" class="hint"></div>
+      <div class="field"><label>Motivo</label>
+        <textarea id="ne-motivo" placeholder="Describa el motivo de la hora extra..."></textarea>
       </div>
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📍 Ubicación actual (GPS)</div>
-      <div class="gps-box"><div class="gps-dot" id="ne-gps-dot"></div><div id="ne-gps-txt" style="color:var(--muted)">Sin ubicación capturada</div></div>
+      <div class="card-title">📍 Ubicación GPS</div>
+      <div class="gps-box" id="ne-gps-box">
+        <div class="gps-dot" id="ne-gps-dot"></div>
+        <div id="ne-gps-txt" style="font-size:13px;color:var(--muted)">Sin ubicación capturada</div>
+      </div>
       <input type="hidden" id="ne-lat"><input type="hidden" id="ne-lng">
-      <button class="btn btn-s" style="margin-top:10px" onclick="captureGPS('ne-gps-dot','ne-gps-txt','ne-lat','ne-lng')">📍 Capturar mi ubicación</button>
+      <button class="btn btn-s" style="margin-top:10px" onclick="captureGPS('ne-gps-dot','ne-gps-txt','ne-lat','ne-lng')">📍 Capturar ubicación ahora</button>
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📸 Foto del equipo o lugar de trabajo</div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <div class="ph-circle" style="width:68px;height:68px" id="ne-ph-circle" onclick="triggerPhoto('ne-ph-input')"><span id="ne-ph-icon">📷</span></div>
-        <div><div style="font-size:13px;font-weight:600;margin-bottom:3px">Foto de inicio</div><div style="font-size:11px;color:var(--muted)">Tome foto del lugar donde va a trabajar las horas extras</div><button class="btn btn-sm btn-s" style="margin-top:7px" onclick="triggerPhoto('ne-ph-input')">Tomar foto</button></div>
+      <div class="card-title">📷 Foto del lugar / equipo</div>
+      <div class="photo-area">
+        <div class="photo-circle" id="ne-ph-circle" onclick="triggerPhoto('ne-ph-input')"><span id="ne-ph-icon">📷</span></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Adjuntar foto</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Foto del área o equipo donde labora</div>
+          <button class="btn btn-sm btn-s" onclick="triggerPhoto('ne-ph-input')">Tomar foto</button>
+        </div>
       </div>
-      <input type="file" id="ne-ph-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,'ne-ph-circle','ne-ph-icon','ne-ph-data','📷')">
+      <input type="file" id="ne-ph-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,'ne-ph-circle','ne-ph-icon','ne-ph-data')">
       <input type="hidden" id="ne-ph-data">
     </div>
-    <button class="btn btn-p" onclick="submitSolicitud()" style="margin:0 0 8px">Enviar solicitud al líder</button>
+    <button class="btn btn-p" style="margin:0 0 8px" onclick="submitSolicitud()">📤 Enviar solicitud al líder</button>
   </div>
 </div>
 
-<!-- ── CIERRE (Etapa 2) ────────────────────────────────────── -->
+<!-- CIERRE -->
 <div id="s-cierre" class="screen">
-  <div class="tb">
-    <button class="back" onclick="navTo('s-extras')">←</button>
-    <div><div class="tb-title">Cierre de hora extra</div><div class="tb-sub">Etapa 2 — Al finalizar</div></div>
+  <div class="topbar">
+    <button class="back-btn" onclick="navTo('s-extras')">←</button>
+    <div><div class="topbar-title">Registrar cierre</div><div class="topbar-sub">Hora extra — Etapa 2</div></div>
   </div>
   <div style="padding:14px">
-    <div class="ibox ibox-green">
-      ✅ Su solicitud fue <b>aprobada</b>. Complete este registro al finalizar las horas extras.
-    </div>
     <div class="card" style="margin:0 0 12px" id="c-resumen"></div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">🏁 Registro de cierre</div>
-      <div class="field">
-        <label>Hora de salida (fin de horas extras)</label>
+      <div class="card-title">⏱ Hora de salida</div>
+      <div class="field"><label>¿A qué hora terminó las horas extras?</label>
         <input type="time" id="c-hora-salida" onchange="calcCierre()">
       </div>
-      <div id="c-total-box" style="display:none;background:var(--bg);border-radius:var(--rs);padding:12px;margin-bottom:10px;text-align:center">
-        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px">TOTAL HORAS TRABAJADAS</div>
-        <div id="c-total-horas" style="font-size:28px;font-weight:800;color:var(--p1)">—</div>
-        <div id="c-aviso-limite" style="font-size:11px;color:var(--err);font-weight:600;display:none">⚠️ Supera el límite de 2h/día permitido por la ley</div>
-      </div>
+      <div id="c-total-box" style="display:none" class="hint"></div>
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📍 Ubicación al finalizar (GPS)</div>
-      <div class="gps-box"><div class="gps-dot" id="c-gps-dot"></div><div id="c-gps-txt" style="color:var(--muted)">Sin ubicación capturada</div></div>
+      <div class="card-title">📍 Ubicación GPS de cierre</div>
+      <div class="gps-box"><div class="gps-dot" id="c-gps-dot"></div>
+        <div id="c-gps-txt" style="font-size:13px;color:var(--muted)">Sin ubicación</div>
+      </div>
       <input type="hidden" id="c-lat"><input type="hidden" id="c-lng">
-      <button class="btn btn-s" style="margin-top:10px" onclick="captureGPS('c-gps-dot','c-gps-txt','c-lat','c-lng')">📍 Capturar ubicación de cierre</button>
+      <button class="btn btn-s" style="margin-top:10px" onclick="captureGPS('c-gps-dot','c-gps-txt','c-lat','c-lng')">📍 Capturar ubicación</button>
     </div>
     <div class="card" style="margin:0 0 12px">
-      <div class="ctitle">📸 Foto de evidencia del trabajo realizado</div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <div class="ph-circle" style="width:68px;height:68px" id="c-ph-circle" onclick="triggerPhoto('c-ph-input')"><span id="c-ph-icon">📷</span></div>
-        <div><div style="font-size:13px;font-weight:600;margin-bottom:3px">Foto de cierre</div><div style="font-size:11px;color:var(--muted)">Evidencia del trabajo realizado durante las horas extras</div><button class="btn btn-sm btn-s" style="margin-top:7px" onclick="triggerPhoto('c-ph-input')">Tomar foto</button></div>
+      <div class="card-title">📷 Foto de evidencia</div>
+      <div class="photo-area">
+        <div class="photo-circle" id="c-ph-circle" onclick="triggerPhoto('c-ph-input')"><span id="c-ph-icon">📷</span></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Foto de evidencia</div>
+          <button class="btn btn-sm btn-s" onclick="triggerPhoto('c-ph-input')">Tomar foto</button>
+        </div>
       </div>
-      <input type="file" id="c-ph-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,'c-ph-circle','c-ph-icon','c-ph-data','📷')">
+      <input type="file" id="c-ph-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this,'c-ph-circle','c-ph-icon','c-ph-data')">
       <input type="hidden" id="c-ph-data">
     </div>
-    <button class="btn btn-p" onclick="submitCierre()" style="margin:0 0 8px">Enviar cierre al líder</button>
+    <button class="btn btn-p" style="margin:0 0 8px" onclick="submitCierre()">🔒 Enviar cierre al líder</button>
   </div>
 </div>
 
-<!-- ── APROBACIONES (Líder) ────────────────────────────────── -->
+<!-- APROBACIONES -->
 <div id="s-aprobar" class="screen">
-  <div class="tb"><div class="tb-title">✅ Aprobaciones</div></div>
+  <div class="topbar"><div class="topbar-title">✅ Aprobaciones</div></div>
   <div style="padding:14px 0">
-    <div class="sl-sec">Pendientes</div>
-    <div class="card" id="ap-list"><div class="empty"><div class="empty-ic">🎉</div><div class="empty-t">¡Todo al día!</div></div></div>
-    <div class="sl-sec">Historial</div>
-    <div class="card" id="ap-hist"><div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Sin historial</div></div>
+    <div class="sec-lbl">Pendientes</div>
+    <div class="card" id="ap-list"></div>
+    <div class="sec-lbl">Historial</div>
+    <div class="card" id="ap-hist"></div>
   </div>
 </div>
 
-<!-- ── ADMIN ───────────────────────────────────────────────── -->
+<!-- ADMIN -->
 <div id="s-admin" class="screen">
-  <div class="tb">
-    <div class="tb-title">🔧 Administración</div>
+  <div class="topbar">
+    <div class="topbar-title">🔧 Administración</div>
     <button class="btn btn-sm btn-p" onclick="openModalNewUser()">+ Usuario</button>
   </div>
   <div style="padding:14px 0">
-    <div class="sg" id="adm-stats"></div>
-    <div class="sl-sec">Mi cuenta</div>
-    <div class="card" style="margin-top:0">
-      <div class="ctitle">🔑 Cambiar mis credenciales</div>
-      <div class="field"><label>Nuevo usuario de acceso</label><input type="text" id="adm-nu" placeholder="Ej: dbastidas" autocapitalize="none"></div>
+    <div class="stats-grid" id="adm-stats"></div>
+    <div class="sec-lbl">Mi cuenta</div>
+    <div class="card">
+      <div class="card-title">🔑 Cambiar credenciales admin</div>
+      <div class="field"><label>Nuevo usuario</label><input type="text" id="adm-nu" placeholder="Dejar vacío para mantener" autocapitalize="none"></div>
       <div class="field"><label>Nueva contraseña</label><input type="password" id="adm-np" placeholder="Mínimo 6 caracteres"></div>
-      <button class="btn btn-p" onclick="cambiarCredAdmin()">Guardar credenciales</button>
+      <button class="btn btn-s" onclick="cambiarCredAdmin()">Actualizar credenciales</button>
     </div>
-    <div class="sl-sec">Trabajadores registrados</div>
-    <div class="card" id="adm-workers"><div class="empty"><div class="empty-ic">👥</div><div class="empty-t">Sin trabajadores</div></div></div>
-    <div class="sl-sec">Todas las solicitudes</div>
-    <div class="card" id="adm-solic"><div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Sin solicitudes</div></div>
+    <div class="sec-lbl">Trabajadores registrados</div>
+    <div class="card" id="adm-workers"></div>
+    <div class="sec-lbl">Todas las solicitudes</div>
+    <div class="card" id="adm-solic"></div>
   </div>
 </div>
 
-</div><!-- #app -->
-
-<!-- ── BOTTOM NAV ──────────────────────────────────────────── -->
+<!-- NAV -->
 <nav id="nav">
-  <button class="ni on" id="n-home" onclick="navTo('s-home')"><span class="ic">🏠</span><span class="lb">Inicio</span></button>
-  <button class="ni" id="n-perfil" onclick="navTo('s-perfil')"><span class="ic">👤</span><span class="lb">Mi Perfil</span></button>
-  <button class="ni" id="n-extras" onclick="navTo('s-extras')"><span class="ic">⏰</span><span class="lb">Horas Extra</span></button>
-  <button class="ni" id="n-adm" onclick="navTo(CU&&CU.role==='admin'?'s-admin':'s-aprobar')" style="position:relative">
+  <button class="ni on" id="n-home" onclick="navTo('s-home')">
+    <span class="ic">🏠</span><span class="lb">Inicio</span>
+  </button>
+  <button class="ni" id="n-perfil" onclick="navTo('s-perfil')">
+    <span class="ic">👤</span><span class="lb">Mi Perfil</span>
+  </button>
+  <button class="ni" id="n-extras" onclick="navTo('s-extras')">
+    <span class="ic">⏰</span><span class="lb">Horas Extra</span>
+  </button>
+  <button class="ni" id="n-adm" onclick="navTo(CU&&CU.role==='admin'?'s-admin':'s-aprobar')" style="display:none">
     <span class="ic" id="n-adm-ic">✅</span>
     <span class="lb" id="n-adm-lb">Aprobar</span>
-    <span class="notif-dot" id="notif-dot" style="display:none"></span>
+    <span class="notif-dot" id="notif-dot"></span>
   </button>
 </nav>
 
-<!-- ── MODAL DETALLE SOLICITUD ─────────────────────────────── -->
-<div class="mo" id="mo-sol" onclick="closeMo(event)">
-  <div class="mb">
-    <div class="mt"><span id="mo-sol-title">Solicitud</span><button class="mc" onclick="closeMoById('mo-sol')">✕</button></div>
+</div><!-- #app -->
+
+<!-- MODAL SOLICITUD -->
+<div class="mo-overlay" id="mo-sol" onclick="closeMoClick(event,'mo-sol')">
+  <div class="mo-box">
+    <div class="mo-title"><span id="mo-sol-title">📋 Detalle solicitud</span>
+      <button class="mo-close" onclick="closeMo('mo-sol')">✕</button>
+    </div>
     <div id="mo-sol-content"></div>
-    <div id="mo-sol-actions" style="margin-top:16px;display:grid;gap:8px"></div>
+    <div id="mo-sol-actions" style="margin-top:16px;display:grid;gap:10px"></div>
   </div>
 </div>
 
-<!-- ── MODAL NUEVO USUARIO ─────────────────────────────────── -->
-<div class="mo" id="mo-user" onclick="closeMo(event)">
-  <div class="mb">
-    <div class="mt">👥 Nuevo usuario<button class="mc" onclick="closeMoById('mo-user')">✕</button></div>
+<!-- MODAL NUEVO USUARIO -->
+<div class="mo-overlay" id="mo-user" onclick="closeMoClick(event,'mo-user')">
+  <div class="mo-box">
+    <div class="mo-title">👥 Nuevo usuario
+      <button class="mo-close" onclick="closeMo('mo-user')">✕</button>
+    </div>
     <div class="field"><label>Nombre completo</label><input type="text" id="nu-nombre" placeholder="Nombre y apellido"></div>
-    <div class="row2">
-      <div class="field"><label>Usuario</label><input type="text" id="nu-user" placeholder="jperez" autocapitalize="none"></div>
+    <div class="field-row">
+      <div class="field"><label>Usuario (login)</label><input type="text" id="nu-user" placeholder="jperez" autocapitalize="none"></div>
       <div class="field"><label>Contraseña</label><input type="password" id="nu-pass" placeholder="••••••••"></div>
     </div>
-    <div class="row2">
+    <div class="field-row">
       <div class="field"><label>Cargo</label><input type="text" id="nu-cargo" placeholder="Ej: Auxiliar"></div>
       <div class="field"><label>Área</label><input type="text" id="nu-area" placeholder="Ej: Salud"></div>
     </div>
-    <div class="field">
-      <label>Salario mensual (COP)</label>
-      <input type="number" id="nu-salario" placeholder="Ej: 1423500" inputmode="numeric">
-      <div class="hint">Para calcular el valor de horas extras. Puede actualizarlo luego.</div>
-    </div>
-    <div class="field">
-      <label>Rol</label>
+    <div class="field"><label>Rol</label>
       <select id="nu-rol">
         <option value="trabajador">Trabajador</option>
-        <option value="lider">Líder de área (puede aprobar)</option>
+        <option value="lider">Líder de área</option>
       </select>
     </div>
-    <button class="btn btn-p" onclick="crearUsuario()" style="margin-top:4px">Crear usuario</button>
+    <div class="field"><label>Salario mensual COP</label>
+      <input type="number" id="nu-salario" placeholder="Ej: 1423500" inputmode="numeric">
+    </div>
+    <button class="btn btn-p" onclick="crearUsuario()">Crear usuario</button>
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- JAVASCRIPT                                                  -->
-<!-- ══════════════════════════════════════════════════════════ -->
+<!-- FIREBASE COMPAT SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
-// ── CONSTANTS ────────────────────────────────────────────────
-const RECARGOS={'Diurna':0.25,'Nocturna':0.75,'Dominical/Festiva Diurna':1.00,'Dominical/Festiva Nocturna':1.50};
-const SALARIO_MIN=1423500; // Salario mínimo 2025 Colombia
 
-// ── FIREBASE ──────────────────────────────────────────────────
-const firebaseConfig = {
+<script>
+// ── FIREBASE INIT ─────────────────────────────────────────────
+firebase.initializeApp({
   apiKey: "AIzaSyDucT-LFMEs-axLoitBnVTxg7bJsvfvz_w",
   authDomain: "plan-a-pwa.firebaseapp.com",
   projectId: "plan-a-pwa",
   storageBucket: "plan-a-pwa.firebasestorage.app",
   messagingSenderId: "1017003719819",
   appId: "1:1017003719819:web:9f896a48aeadd02a03688e"
-};
-
-firebase.initializeApp(firebaseConfig);
+});
 const db = firebase.firestore();
 
-// ── DB (Firebase compat + localStorage para sesión) ───────────
-const DB = {
-  // SESIÓN — localStorage (solo este dispositivo)
-  session(){try{return JSON.parse(localStorage.getItem('pa_session'))||null}catch{return null}},
-  saveSession(u){localStorage.setItem('pa_session',JSON.stringify(u))},
-  clearSession(){localStorage.removeItem('pa_session')},
+// ── CONSTANTES ────────────────────────────────────────────────
+const SALARIO_MIN = 1423500;
+const RECARGOS = {'Diurna':0.25,'Nocturna':0.75,'Dominical/Festiva Diurna':1.00,'Dominical/Festiva Nocturna':1.50};
 
-  // USUARIOS — Firestore
-  async getUsers(){
-    const snap = await db.collection('users').get();
-    return snap.docs.map(d=>({id:d.id,...d.data()}));
-  },
-  async saveUser(u){
-    await db.collection('users').doc(u.id).set(u);
-  },
-  async deleteUser(id){
-    await db.collection('users').doc(id).delete();
-  },
-  async findUser(username, password){
-    const snap = await db.collection('users')
-      .where('username','==',username)
-      .where('password','==',password)
-      .get();
-    if(snap.empty) return null;
-    const d = snap.docs[0];
-    return {id:d.id,...d.data()};
-  },
+// ── ESTADO ────────────────────────────────────────────────────
+let CU = null; // currentUser
+let CS = '';   // currentScreen
+let cierreId = null;
 
-  // SOLICITUDES — Firestore
-  async getSolic(){
-    const snap = await db.collection('solicitudes').get();
-    return snap.docs.map(d=>({id:d.id,...d.data()}));
-  },
-  async saveSolicDoc(s){
-    await db.collection('solicitudes').doc(s.id).set(s);
-  },
-};
+// ── SESIÓN LOCAL ──────────────────────────────────────────────
+function getSession(){try{return JSON.parse(localStorage.getItem('pa_session'))||null}catch{return null}}
+function saveSession(u){localStorage.setItem('pa_session',JSON.stringify(u))}
+function clearSession(){localStorage.removeItem('pa_session')}
 
-// ── SEED ADMIN (primera vez) ───────────────────────────────────
+// ── LOADING ───────────────────────────────────────────────────
+function showLoad(){document.getElementById('loading').classList.add('on')}
+function hideLoad(){document.getElementById('loading').classList.remove('on')}
+
+// ── FIREBASE HELPERS ──────────────────────────────────────────
+async function fbGetUsers(){
+  const snap = await db.collection('users').get();
+  return snap.docs.map(d => ({...d.data(), id: d.id}));
+}
+async function fbSaveUser(u){
+  await db.collection('users').doc(u.id).set(u);
+}
+async function fbDeleteUser(id){
+  await db.collection('users').doc(id).delete();
+}
+async function fbFindUser(username, password){
+  const snap = await db.collection('users')
+    .where('username','==',username)
+    .where('password','==',password)
+    .get();
+  if(snap.empty) return null;
+  const d = snap.docs[0];
+  return {...d.data(), id: d.id};
+}
+async function fbGetSolic(){
+  const snap = await db.collection('solicitudes').get();
+  return snap.docs.map(d => ({...d.data(), id: d.id}));
+}
+async function fbSaveSolic(s){
+  await db.collection('solicitudes').doc(s.id).set(s);
+}
+
+// ── INIT ADMIN ────────────────────────────────────────────────
 async function initAdmin(){
-  const adminDoc = await db.collection('users').doc('admin').get();
-  if(!adminDoc.exists){
+  const doc = await db.collection('users').doc('admin').get();
+  if(!doc.exists){
     await db.collection('users').doc('admin').set({
-      id:'admin',username:'admin',password:'admin2026',role:'admin',
-      nombre:'Daniel Bastidas',cargo:'Administrador',area:'SST',
-      profile:{salario:SALARIO_MIN},createdAt:new Date().toISOString()
+      id:'admin', username:'admin', password:'admin2026', role:'admin',
+      nombre:'Daniel Bastidas', cargo:'Administrador', area:'SST',
+      profile:{salario:SALARIO_MIN}, createdAt: new Date().toISOString()
     });
   }
 }
 
-// ── CACHE LOCAL (para evitar múltiples lecturas a Firestore) ──
-let _users = null, _solic = null;
-async function loadCache(){
-  [_users, _solic] = await Promise.all([DB.getUsers(), DB.getSolic()]);
-}
-function usersCache(){return _users||[];}
-function solicCache(){return _solic||[];}
-
-// ── STATE ─────────────────────────────────────────────────────
-let CU=null, CS='', cierreId=null;
-
-// ── NAVIGATION ────────────────────────────────────────────────
+// ── NAVEGACIÓN ────────────────────────────────────────────────
 async function navTo(sid){
+  showLoad();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  const s=document.getElementById(sid);
-  if(s){s.classList.add('active');s.scrollTop=0}
-  CS=sid;
+  const el = document.getElementById(sid);
+  if(el){el.classList.add('active'); el.scrollTop=0;}
+  CS = sid;
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
-  const nm={'s-home':'n-home','s-perfil':'n-perfil','s-extras':'n-extras',
-    's-admin':'n-adm','s-aprobar':'n-adm','s-nueva':'n-extras','s-cierre':'n-extras'};
+  const nm = {'s-home':'n-home','s-perfil':'n-perfil','s-extras':'n-extras',
+    's-nueva':'n-extras','s-cierre':'n-extras','s-admin':'n-adm','s-aprobar':'n-adm'};
   if(nm[sid]) document.getElementById(nm[sid])?.classList.add('on');
-  // Recargar datos desde Firestore al cambiar pantalla
-  if(['s-home','s-extras','s-aprobar','s-admin'].includes(sid)){
-    await loadCache();
-  }
-  if(sid==='s-home') renderHome();
-  if(sid==='s-extras') renderExtras();
-  if(sid==='s-perfil') loadPerfil();
-  if(sid==='s-aprobar') renderAprobar();
-  if(sid==='s-admin') renderAdmin();
-  updateNotifDot();
+  try{
+    if(sid==='s-home') await renderHome();
+    if(sid==='s-extras') await renderExtras();
+    if(sid==='s-perfil') loadPerfil();
+    if(sid==='s-aprobar') await renderAprobar();
+    if(sid==='s-admin') await renderAdmin();
+    await updateNotifDot();
+  }catch(e){console.error(e);}
+  hideLoad();
 }
 
 // ── AUTH ──────────────────────────────────────────────────────
 async function doLogin(){
-  const u=gv('l-user').trim(), p=gv('l-pass');
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
   if(!u||!p){toast('Ingrese usuario y contraseña','err');return}
-  toast('Verificando...','');
-  const found = await DB.findUser(u,p);
-  if(!found){toast('Usuario o contraseña incorrectos','err');return}
-  CU=found; DB.saveSession(found); await enterApp();
+  showLoad();
+  try{
+    const found = await fbFindUser(u, p);
+    if(!found){hideLoad();toast('Usuario o contraseña incorrectos','err');return}
+    CU = found;
+    saveSession(found);
+    enterApp();
+  }catch(e){
+    hideLoad();
+    toast('Error de conexión. Revise su internet','err');
+  }
 }
-async function enterApp(){
-  if(!CU) return;
-  toast('Cargando...','');
-  await loadCache();
-  document.getElementById('login-overlay').classList.add('hidden');
-  const nav=document.getElementById('nav');
+
+function enterApp(){
+  document.getElementById('s-login').classList.remove('active');
+  const nav = document.getElementById('nav');
   nav.classList.add('on');
-  const isAdm=CU.role==='admin', isLid=CU.role==='lider';
-  document.getElementById('n-adm-ic').textContent=isAdm?'🔧':'✅';
-  document.getElementById('n-adm-lb').textContent=isAdm?'Admin':'Aprobar';
-  const nAdm=document.getElementById('n-adm');
-  if(!isAdm&&!isLid){nAdm.style.display='none';nav.className='nav on cols3';}
-  else{nAdm.style.display='';nav.className='nav on cols4';}
+  const isAdm = CU.role==='admin', isLid = CU.role==='lider';
+  document.getElementById('n-adm-ic').textContent = isAdm?'🔧':'✅';
+  document.getElementById('n-adm-lb').textContent = isAdm?'Admin':'Aprobar';
+  const nAdm = document.getElementById('n-adm');
+  if(isAdm||isLid){
+    nAdm.style.display='';
+    nav.classList.add('cols4');
+  } else {
+    nAdm.style.display='none';
+    nav.classList.remove('cols4');
+  }
   navTo('s-home');
 }
+
 function logout(){
-  CU=null; _users=null; _solic=null; DB.clearSession();
-  document.getElementById('nav').classList.remove('on');
+  CU = null; cierreId = null;
+  clearSession();
+  document.getElementById('nav').classList.remove('on','cols4');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('login-overlay').classList.remove('hidden');
-  gEl('l-user').value=''; gEl('l-pass').value='';
+  document.getElementById('s-login').classList.add('active');
+  document.getElementById('l-user').value='';
+  document.getElementById('l-pass').value='';
 }
-window.addEventListener('DOMContentLoaded', async ()=>{
-  await initAdmin();
-  const s=DB.session();
-  if(s){CU=s; await enterApp();}
-  gEl('ne-fecha').value=today();
-});
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!CU)doLogin()});
 
 // ── HOME ──────────────────────────────────────────────────────
-function renderHome(){
+async function renderHome(){
   if(!CU) return;
-  gEl('h-name').textContent=firstName(CU.nombre||CU.username);
-  gEl('h-role').textContent=roleLabel(CU.role)+(CU.area?' · '+CU.area:'');
-  const all=solicCache(), mias=all.filter(s=>s.userId===CU.id);
-  const sg=gEl('h-stats');
+  document.getElementById('h-name').textContent = firstName(CU.nombre||CU.username);
+  document.getElementById('h-role').textContent = roleLabel(CU.role)+(CU.area?' · '+CU.area:'');
+  const [users, all] = await Promise.all([fbGetUsers(), fbGetSolic()]);
+  const mias = all.filter(s=>s.userId===CU.id);
+  const sg = document.getElementById('h-stats');
   if(CU.role==='admin'){
-    const us=usersCache().filter(u=>u.role!=='admin');
-    sg.innerHTML=stCard(us.length,'Trabajadores')+stCard(all.filter(s=>s.estado==='pendiente').length,'Pendientes')
+    sg.innerHTML = stCard(users.filter(u=>u.role!=='admin').length,'Trabajadores')
+      +stCard(all.filter(s=>s.estado==='pendiente').length,'Pendientes')
       +stCard(all.filter(s=>s.etapa==='cierre'&&s.estado==='pendiente').length,'Cierres')
       +stCard(all.filter(s=>s.estado==='cerrada').length,'Cerradas');
   } else if(CU.role==='lider'){
-    const da=all.filter(s=>s.area===CU.area);
-    sg.innerHTML=stCard(da.filter(s=>s.estado==='pendiente').length,'Pendientes área')
-      +stCard(da.filter(s=>s.estado==='aprobada'||s.estado==='cerrada').length,'Aprobadas')
+    const da = all.filter(s=>s.area===CU.area);
+    sg.innerHTML = stCard(da.filter(s=>s.estado==='pendiente').length,'Pendientes área')
+      +stCard(da.filter(s=>s.estado!=='pendiente').length,'Procesadas')
       +stCard(mias.length,'Mis solicitudes')
       +stCard(mias.filter(s=>s.estado==='aprobada').length,'Mis aprobadas');
   } else {
-    sg.innerHTML=stCard(mias.length,'Mis solicitudes')
+    sg.innerHTML = stCard(mias.length,'Mis solicitudes')
       +stCard(mias.filter(s=>s.estado==='pendiente').length,'Pendientes')
       +stCard(mias.filter(s=>s.estado==='aprobada').length,'Aprobadas')
       +stCard(mias.filter(s=>s.estado==='cerrada').length,'Cerradas');
   }
-  const sc=gEl('h-shortcuts');
-  const cards=[
+  const sc = document.getElementById('h-shortcuts');
+  const cards = [
     {ic:'👤',t:'Mi Perfil',s:'Ver y editar datos',sid:'s-perfil'},
     {ic:'⏰',t:'Horas Extras',s:'Nueva solicitud',sid:'s-extras'},
   ];
   if(CU.role==='admin') cards.push({ic:'🔧',t:'Administrar',s:'Gestionar usuarios',sid:'s-admin'});
   if(CU.role==='lider') cards.push({ic:'✅',t:'Aprobaciones',s:'Revisar solicitudes',sid:'s-aprobar'});
-  sc.innerHTML=cards.map(c=>`<div class="card" style="margin:0;cursor:pointer" onclick="navTo('${c.sid}')">
-    <div style="font-size:26px;margin-bottom:7px">${c.ic}</div>
-    <div style="font-weight:700;font-size:13px">${c.t}</div>
-    <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.s}</div>
-  </div>`).join('');
-  // pending for lider/admin
-  const pl=gEl('h-pend-lbl'), pc=gEl('h-pend-card'), pli=gEl('h-pend-list');
+  sc.innerHTML = cards.map(c=>`
+    <div class="shortcut-card" onclick="navTo('${c.sid}')">
+      <div style="font-size:28px;margin-bottom:8px">${c.ic}</div>
+      <div style="font-weight:700;font-size:14px">${c.t}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.s}</div>
+    </div>`).join('');
+  // Pendientes para líder/admin
+  const pl = document.getElementById('h-pend-lbl');
+  const pc = document.getElementById('h-pend-card');
+  const plist = document.getElementById('h-pend-list');
   if(CU.role==='lider'||CU.role==='admin'){
-    const pend=CU.role==='admin'?all.filter(s=>s.estado==='pendiente'):all.filter(s=>s.estado==='pendiente'&&s.area===CU.area);
-    if(pend.length){pl.style.display='';pc.style.display='';pli.innerHTML=pend.slice(0,4).map(s=>liHTML(s,true)).join('');}
-    else{pl.style.display='none';pc.style.display='none';}
-  } else {pl.style.display='none';pc.style.display='none';}
+    const pend = CU.role==='admin'
+      ? all.filter(s=>s.estado==='pendiente')
+      : all.filter(s=>s.estado==='pendiente'&&s.area===CU.area);
+    if(pend.length>0){
+      pl.style.display=''; pc.style.display='';
+      plist.innerHTML = pend.slice(0,3).map(s=>solItemHTML(s,true)).join('');
+    } else {pl.style.display='none'; pc.style.display='none';}
+  } else {pl.style.display='none'; pc.style.display='none';}
 }
 
 // ── PERFIL ────────────────────────────────────────────────────
 function loadPerfil(){
   if(!CU) return;
-  const u=usersCache().find(x=>x.id===CU.id)||CU, p=u.profile||{};
-  sv('pf-nombre',u.nombre||''); sv('pf-cedula',p.cedula||'');
-  sv('pf-cargo',u.cargo||''); sv('pf-area',u.area||'');
-  sv('pf-tel',p.tel||''); sv('pf-email',p.email||'');
-  sv('pf-ingreso',p.ingreso||''); sv('pf-eps',p.eps||''); sv('pf-arl',p.arl||'');
-  sv('pf-acud',p.acud||''); sv('pf-acud-tel',p.acudTel||'');
-  if(p.foto){setPhotoCircle('pf-ph-circle','pf-ph-icon',p.foto);sv('pf-ph-data',p.foto);}
+  const p = CU.profile||{};
+  sv('pf-nombre', CU.nombre||'');
+  sv('pf-cedula', p.cedula||'');
+  sv('pf-cargo', CU.cargo||'');
+  sv('pf-area', CU.area||'');
+  sv('pf-tel', p.tel||'');
+  sv('pf-email', p.email||'');
+  sv('pf-ingreso', p.ingreso||'');
+  sv('pf-eps', p.eps||'');
+  sv('pf-arl', p.arl||'');
+  sv('pf-acud', p.acud||'');
+  sv('pf-acud-tel', p.acudTel||'');
+  if(p.foto){
+    const c = gEl('pf-ph-circle');
+    c.innerHTML = `<img src="${p.foto}" alt="Foto">`;
+    c.classList.add('has-photo');
+    sv('pf-ph-data', p.foto);
+  }
 }
 async function savePerfil(){
-  const users=usersCache(), idx=users.findIndex(x=>x.id===CU.id);
-  if(idx<0){toast('Error','err');return}
-  const nombre=gv('pf-nombre'); if(!nombre){toast('Ingrese su nombre','err');return}
-  users[idx].nombre=nombre; users[idx].cargo=gv('pf-cargo'); users[idx].area=gv('pf-area');
-  users[idx].profile={...users[idx].profile,
-    cedula:gv('pf-cedula'),tel:gv('pf-tel'),email:gv('pf-email'),
-    ingreso:gv('pf-ingreso'),eps:gv('pf-eps'),arl:gv('pf-arl'),
-    acud:gv('pf-acud'),acudTel:gv('pf-acud-tel'),foto:gv('pf-ph-data')||users[idx].profile?.foto||''};
-  await DB.saveUser(users[idx]); _users=users; CU=users[idx]; DB.saveSession(CU);
-  toast('Perfil guardado ✓','ok');
+  const nombre = gv('pf-nombre');
+  if(!nombre){toast('Ingrese su nombre','err');return}
+  showLoad();
+  try{
+    const u = {...CU,
+      nombre, cargo:gv('pf-cargo'), area:gv('pf-area'),
+      profile:{...(CU.profile||{}),
+        cedula:gv('pf-cedula'), tel:gv('pf-tel'), email:gv('pf-email'),
+        ingreso:gv('pf-ingreso'), eps:gv('pf-eps'), arl:gv('pf-arl'),
+        acud:gv('pf-acud'), acudTel:gv('pf-acud-tel'),
+        foto:gv('pf-ph-data')||CU.profile?.foto||''
+      }
+    };
+    await fbSaveUser(u);
+    CU = u; saveSession(u);
+    toast('Perfil guardado ✓','ok');
+  }catch(e){toast('Error al guardar','err');}
+  hideLoad();
 }
 
 // ── EXTRAS LIST ───────────────────────────────────────────────
-function renderExtras(){
+async function renderExtras(){
   if(!CU) return;
-  const mias=solicCache().filter(s=>s.userId===CU.id);
-  const pend=mias.filter(s=>s.estado==='pendiente').length;
-  const apro=mias.filter(s=>s.estado==='aprobada').length;
-  gEl('ex-stats').innerHTML=stCard(mias.length,'Total')+stCard(pend,'Pendientes')+stCard(apro,'Aprobadas')+stCard(mias.filter(s=>s.estado==='cerrada').length,'Cerradas');
-  const el=gEl('ex-list');
-  if(!mias.length){el.innerHTML=`<div class="empty"><div class="empty-ic">📋</div><div class="empty-t">Sin solicitudes</div><div>Toca "+ Nueva" para registrar horas extras</div></div>`;return}
-  el.innerHTML=[...mias].reverse().map(s=>liHTML(s,false)).join('');
-}
-
-// ── LIST ITEM HTML ────────────────────────────────────────────
-function liHTML(s,showUser){
-  const bgM={'pendiente':'#FEF9C3','aprobada':'#D1FAE5','rechazada':'#FEE2E2','cerrada':'#DBEAFE'};
-  const icM={'pendiente':'⏳','aprobada':'✅','rechazada':'❌','cerrada':'🏁'};
-  const bdM={'pendiente':'b-pend','aprobada':'b-ok','rechazada':'b-rej','cerrada':'b-close'};
-  const etag=s.etapa==='cierre'?`<span class="etag etag-cie">CIERRE</span>`:`<span class="etag etag-sol">SOLICITUD</span>`;
-  const user=showUser?(usersCache().find(u=>u.id===s.userId)?.nombre||s.userName||'—'):'';
-  return `<div class="li" onclick="openSolModal('${s.id}')">
-    <div class="li-ic" style="background:${bgM[s.estado]||'#F3F4F6'}">${icM[s.estado]||'📋'}</div>
-    <div class="li-body">
-      ${showUser?`<div class="li-user">${user}</div>`:''}
-      <div class="li-title">${s.tipo||'—'} ${etag}</div>
-      <div class="li-meta">${formatDate(s.fecha)} · Inicio extra: ${s.inicioExtra||'—'}${s.horasTotales?' · '+s.horasTotales+'h':''}</div>
-    </div>
-    <span class="badge ${bdM[s.estado]||''}">${s.estado}</span>
-  </div>`;
+  const all = await fbGetSolic();
+  const mias = all.filter(s=>s.userId===CU.id);
+  document.getElementById('ex-stats').innerHTML =
+    stCard(mias.length,'Total')
+    +stCard(mias.filter(s=>s.estado==='pendiente').length,'Pendientes')
+    +stCard(mias.filter(s=>s.estado==='aprobada').length,'Aprobadas')
+    +stCard(mias.filter(s=>s.estado==='cerrada').length,'Cerradas');
+  const el = document.getElementById('ex-list');
+  if(!mias.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ic">📋</div><div class="empty-t">Sin solicitudes</div><div>Toca "+ Nueva" para registrar</div></div>`;
+    return;
+  }
+  // Separar solicitudes abiertas (con cierre pendiente) y el resto
+  const aprobPendCierre = mias.filter(s=>s.etapa==='solicitud'&&s.estado==='aprobada');
+  el.innerHTML = '';
+  if(aprobPendCierre.length){
+    el.innerHTML += `<div style="font-size:12px;font-weight:700;color:var(--ok);padding:6px 0 4px">✅ Aprobadas — registre su cierre:</div>`;
+    el.innerHTML += aprobPendCierre.map(s=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        ${solItemHTML(s,false)}
+        <button class="btn btn-ok" style="margin-top:8px;padding:10px" onclick="abrirCierre('${s.id}')">🔒 Registrar cierre</button>
+      </div>`).join('');
+  }
+  el.innerHTML += [...mias].reverse().map(s=>solItemHTML(s,false)).join('');
 }
 
 // ── NUEVA SOLICITUD ───────────────────────────────────────────
 function autoDetectTipo(){
   const fecha=gv('ne-fecha'), hora=gv('ne-inicio-extra');
   if(!fecha||!hora) return;
-  const tipo=detectTipo(fecha,hora);
-  gEl('ne-tipo').value=tipo;
+  const tipo = detectTipo(fecha,hora);
+  gEl('ne-tipo').value = tipo;
   showRecargo();
 }
 function detectTipo(fecha,hora){
-  const d=new Date(fecha+'T00:00:00'), dow=d.getDay(); // 0=dom
-  const esFestivo=dow===0;
-  const [h]=hora.split(':').map(Number);
-  const diurno=h>=6&&h<19; // Ley 2466 de 2025: nocturno desde las 7:00 p.m.
+  const d = new Date(fecha+'T00:00:00'), dow = d.getDay();
+  const esFestivo = dow===0;
+  const [h] = hora.split(':').map(Number);
+  const diurno = h>=6 && h<19; // Ley 2466 de 2025: nocturno desde las 7pm
   if(esFestivo) return diurno?'Dominical/Festiva Diurna':'Dominical/Festiva Nocturna';
   return diurno?'Diurna':'Nocturna';
 }
 function showRecargo(){
   const tipo=gv('ne-tipo'), el=gEl('ne-recargo-hint');
-  const map={'Diurna':'✅ Recargo +25% sobre hora ordinaria',
-    'Nocturna':'🔵 Recargo +75%',
-    'Dominical/Festiva Diurna':'🟠 Recargo +100% — día de descanso',
-    'Dominical/Festiva Nocturna':'🔴 Recargo +150% — festivo nocturno'};
+  const map={
+    'Diurna':'✅ Recargo +25% — Lun–Sáb 6:00am–7:00pm (Ley 2466/2025)',
+    'Nocturna':'🔵 Recargo +75% — Lun–Sáb 7:00pm–6:00am (Ley 2466/2025)',
+    'Dominical/Festiva Diurna':'🟠 Recargo +100% — Día de descanso diurno',
+    'Dominical/Festiva Nocturna':'🔴 Recargo +150% — Día de descanso nocturno'
+  };
   if(map[tipo]){el.textContent=map[tipo];el.style.display='block';}
   else el.style.display='none';
 }
 async function submitSolicitud(){
-  const fecha=gv('ne-fecha'),entN=gv('ne-ent-normal'),salN=gv('ne-sal-normal');
-  const inicioE=gv('ne-inicio-extra'),motivo=gv('ne-motivo');
-  const lat=gv('ne-lat'),lng=gv('ne-lng'),foto=gv('ne-ph-data');
-  // Validar campos básicos
+  const fecha=gv('ne-fecha'), entN=gv('ne-ent-normal'), salN=gv('ne-sal-normal');
+  const inicioE=gv('ne-inicio-extra'), motivo=gv('ne-motivo');
+  const lat=gv('ne-lat'), lng=gv('ne-lng'), foto=gv('ne-ph-data');
   if(!fecha){toast('Seleccione la fecha','err');return}
-  if(!entN){toast('Ingrese la hora de entrada jornada normal','err');return}
-  if(!salN){toast('Ingrese la hora de salida jornada normal','err');return}
-  if(!inicioE){toast('Ingrese la hora de inicio de hora extra','err');return}
-  if(!motivo){toast('Ingrese el motivo de la solicitud','err');return}
+  if(!entN){toast('Ingrese hora de entrada jornada normal','err');return}
+  if(!salN){toast('Ingrese hora de salida jornada normal','err');return}
+  if(!inicioE){toast('Ingrese hora de inicio de hora extra','err');return}
+  if(!motivo){toast('Ingrese el motivo','err');return}
   if(!lat||!lng){toast('Capture la ubicación GPS','err');return}
   if(!foto){toast('Tome una foto del lugar o equipo','err');return}
-  // Auto-detectar tipo si no fue seleccionado manualmente
-  let tipo=gv('ne-tipo');
-  if(!tipo){
-    tipo=detectTipo(fecha,inicioE);
-    gEl('ne-tipo').value=tipo;
+  let tipo = gv('ne-tipo');
+  if(!tipo) tipo = detectTipo(fecha, inicioE);
+  showLoad();
+  try{
+    const users = await fbGetUsers();
+    const u = users.find(x=>x.id===CU.id)||CU;
+    const sol = {
+      id: 'sol_'+Date.now(),
+      userId: CU.id,
+      userName: CU.nombre||CU.username,
+      area: u.area||CU.area||'Sin área',
+      tipo, fecha,
+      entradaNormal:entN, salidaNormal:salN, inicioExtra:inicioE,
+      motivo, lat, lng, foto,
+      etapa: 'solicitud',
+      estado: 'pendiente',
+      createdAt: new Date().toISOString()
+    };
+    await fbSaveSolic(sol);
+    // Reset form
+    ['ne-fecha','ne-ent-normal','ne-sal-normal','ne-inicio-extra','ne-motivo','ne-lat','ne-lng','ne-ph-data']
+      .forEach(id=>{const e=gEl(id);if(e)e.value='';});
+    gEl('ne-fecha').value = today();
+    resetPhoto('ne-ph-circle','ne-ph-icon','📷');
+    gEl('ne-gps-dot').classList.remove('on');
+    gEl('ne-gps-txt').textContent='Sin ubicación capturada';
+    gEl('ne-recargo-hint').style.display='none';
+    toast('Solicitud enviada al líder ✓','ok');
+    await navTo('s-extras');
+  }catch(e){
+    hideLoad();
+    toast('Error al enviar. Revise su internet','err');
   }
-  const u=usersCache().find(x=>x.id===CU.id)||CU;
-  const sol={id:'s_'+Date.now(),userId:CU.id,userName:CU.nombre||CU.username,
-    area:u.area||CU.area||'Sin área',tipo,fecha,
-    entradaNormal:entN,salidaNormal:salN,inicioExtra:inicioE,
-    motivo,lat,lng,foto,etapa:'solicitud',estado:'pendiente',
-    createdAt:new Date().toISOString()};
-  await DB.saveSolicDoc(sol);
-  _solic=[...solicCache(), sol];
-  addNotif(sol.area);
-  // reset
-  ['ne-fecha','ne-ent-normal','ne-sal-normal','ne-inicio-extra','ne-motivo','ne-lat','ne-lng','ne-ph-data'].forEach(id=>{const e=gEl(id);if(e)e.value='';});
-  gEl('ne-fecha').value=today();
-  resetPhotoCircle('ne-ph-circle','ne-ph-icon','📷');
-  gEl('ne-gps-dot').classList.remove('on'); gEl('ne-gps-txt').textContent='Sin ubicación capturada';
-  gEl('ne-recargo-hint').style.display='none';
-  toast('Solicitud enviada al líder ✓','ok');
-  navTo('s-extras');
 }
 
 // ── CIERRE ────────────────────────────────────────────────────
-function abrirCierre(solId){
-  cierreId=solId;
-  const s=solicCache().find(x=>x.id===solId);
-  if(!s){toast('Solicitud no encontrada','err');return}
-  gEl('c-resumen').innerHTML=`
-    <div class="ctitle">📋 Resumen de solicitud aprobada</div>
-    <div class="dr"><span class="dk">Tipo</span><span class="dv">${s.tipo}</span></div>
-    <div class="dr"><span class="dk">Fecha</span><span class="dv">${formatDate(s.fecha)}</span></div>
-    <div class="dr"><span class="dk">Jornada normal</span><span class="dv">${s.entradaNormal} – ${s.salidaNormal}</span></div>
-    <div class="dr"><span class="dk">Inicio horas extra</span><span class="dv">${s.inicioExtra}</span></div>
-    <div class="dr"><span class="dk">Motivo</span><span class="dv">${s.motivo}</span></div>`;
-  ['c-hora-salida','c-lat','c-lng','c-ph-data'].forEach(id=>{const e=gEl(id);if(e)e.value='';});
-  gEl('c-total-box').style.display='none';
-  gEl('c-aviso-limite').style.display='none';
-  resetPhotoCircle('c-ph-circle','c-ph-icon','📷');
-  gEl('c-gps-dot').classList.remove('on'); gEl('c-gps-txt').textContent='Sin ubicación';
-  closeMoById('mo-sol');
-  navTo('s-cierre');
+async function abrirCierre(solId){
+  showLoad();
+  try{
+    const snap = await db.collection('solicitudes').doc(solId).get();
+    if(!snap.exists){hideLoad();toast('Solicitud no encontrada','err');return}
+    const s = {...snap.data(), id:snap.id};
+    cierreId = solId;
+    gEl('c-resumen').innerHTML=`
+      <div class="card-title">📋 Solicitud aprobada</div>
+      <div class="dr"><span class="dk">Tipo</span><span class="dv">${s.tipo}</span></div>
+      <div class="dr"><span class="dk">Fecha</span><span class="dv">${formatDate(s.fecha)}</span></div>
+      <div class="dr"><span class="dk">Jornada normal</span><span class="dv">${s.entradaNormal} – ${s.salidaNormal}</span></div>
+      <div class="dr"><span class="dk">Inicio extra</span><span class="dv">${s.inicioExtra}</span></div>
+      <div class="dr"><span class="dk">Motivo</span><span class="dv">${s.motivo}</span></div>`;
+    ['c-hora-salida','c-lat','c-lng','c-ph-data'].forEach(id=>{const e=gEl(id);if(e)e.value='';});
+    resetPhoto('c-ph-circle','c-ph-icon','📷');
+    gEl('c-gps-dot').classList.remove('on');
+    gEl('c-gps-txt').textContent='Sin ubicación';
+    gEl('c-total-box').style.display='none';
+    hideLoad();
+    navTo('s-cierre');
+  }catch(e){hideLoad();toast('Error al cargar solicitud','err');}
 }
 function calcCierre(){
   if(!cierreId) return;
-  const s=solicCache().find(x=>x.id===cierreId);
-  if(!s) return;
-  const sal=gv('c-hora-salida');
-  if(!sal) return;
-  const h=calcHoras(s.inicioExtra,sal);
-  gEl('c-total-horas').textContent=h+'h';
-  gEl('c-total-box').style.display='block';
-  const over=parseFloat(h)>2;
-  gEl('c-aviso-limite').style.display=over?'block':'none';
-  gEl('c-total-horas').style.color=over?'var(--err)':'var(--p1)';
+  db.collection('solicitudes').doc(cierreId).get().then(snap=>{
+    if(!snap.exists) return;
+    const s = snap.data();
+    const sal = gv('c-hora-salida');
+    if(!sal) return;
+    const horas = calcHoras(s.inicioExtra, sal);
+    const box = gEl('c-total-box');
+    box.textContent = `⏱ Total horas extras: ${horas}h`;
+    box.style.display='block';
+    if(parseFloat(horas)>2) box.textContent += ' ⚠️ Supera el límite de 2h/día (Art.167 CST)';
+  });
 }
 async function submitCierre(){
   if(!cierreId){toast('Error: no hay solicitud activa','err');return}
-  const sal=gv('c-hora-salida'),lat=gv('c-lat'),lng=gv('c-lng'),foto=gv('c-ph-data');
+  const sal=gv('c-hora-salida'), lat=gv('c-lat'), lng=gv('c-lng'), foto=gv('c-ph-data');
   if(!sal){toast('Ingrese la hora de salida','err');return}
-  if(!lat||!lng){toast('Capture la ubicación GPS de cierre','err');return}
+  if(!lat||!lng){toast('Capture la ubicación GPS','err');return}
   if(!foto){toast('Tome la foto de evidencia','err');return}
-  const solic=solicCache(), idx=solic.findIndex(x=>x.id===cierreId);
-  if(idx<0){toast('Solicitud no encontrada','err');return}
-  const s=solic[idx];
-  const horas=calcHoras(s.inicioExtra,sal);
-  const u=usersCache().find(x=>x.id===s.userId);
-  const salario=parseFloat(u?.profile?.salario)||SALARIO_MIN;
-  const valor=calcValor(salario,s.tipo,horas);
-  solic[idx]={...s,etapa:'cierre',estado:'pendiente',
-    horaSalida:sal,horasTotales:horas,valorEstimado:valor,salarioBase:salario,
-    cierreLat:lat,cierreLng:lng,fotoEvidencia:foto,cierreAt:new Date().toISOString()};
-  await DB.saveSolicDoc(solic[idx]);
-  _solic=solic; addNotif(s.area); cierreId=null;
-  toast('Cierre enviado al líder ✓','ok');
-  navTo('s-extras');
+  showLoad();
+  try{
+    const snap = await db.collection('solicitudes').doc(cierreId).get();
+    if(!snap.exists){hideLoad();toast('Solicitud no encontrada','err');return}
+    const s = snap.data();
+    const horas = calcHoras(s.inicioExtra, sal);
+    const users = await fbGetUsers();
+    const u = users.find(x=>x.id===s.userId);
+    const salario = parseFloat(u?.profile?.salario)||SALARIO_MIN;
+    const valor = calcValor(salario, s.tipo, horas);
+    await db.collection('solicitudes').doc(cierreId).update({
+      etapa:'cierre', estado:'pendiente',
+      horaSalida:sal, horasTotales:horas, valorEstimado:valor, salarioBase:salario,
+      cierreLat:lat, cierreLng:lng, fotoEvidencia:foto,
+      cierreAt:new Date().toISOString()
+    });
+    cierreId = null;
+    toast('Cierre enviado al líder ✓','ok');
+    await navTo('s-extras');
+  }catch(e){
+    hideLoad();
+    toast('Error al enviar cierre. Revise su internet','err');
+  }
 }
 
 // ── CALCULAR VALOR ────────────────────────────────────────────
-function calcValor(salario,tipo,horas){
-  const vh=salario/230; // valor hora ordinaria (jornada 46h/semana × 5 semanas, Ley 2101/2021 vigente 2025)
-  const rec=RECARGOS[tipo]||0.25;
+function calcValor(salario, tipo, horas){
+  const vh = salario/230; // Ley 2101/2021: jornada 46h/semana vigente 2025
+  const rec = RECARGOS[tipo]||0.25;
   return Math.round(vh*(1+rec)*parseFloat(horas));
 }
 
 // ── APROBACIONES ──────────────────────────────────────────────
-function renderAprobar(){
+async function renderAprobar(){
   if(!CU) return;
-  const all=solicCache();
-  const da=CU.role==='admin'?all:all.filter(s=>s.area===CU.area);
-  const pend=da.filter(s=>s.estado==='pendiente');
-  const hist=da.filter(s=>s.estado!=='pendiente');
-  gEl('ap-list').innerHTML=pend.length?pend.map(s=>liHTML(s,true)).join(''):
-    `<div class="empty"><div class="empty-ic">🎉</div><div class="empty-t">¡Todo al día!</div><div>No hay solicitudes pendientes</div></div>`;
-  gEl('ap-hist').innerHTML=hist.length?[...hist].reverse().slice(0,20).map(s=>liHTML(s,true)).join(''):
-    `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Sin historial</div>`;
-}
-
-// ── MODAL SOLICITUD ───────────────────────────────────────────
-function openSolModal(id){
-  const s=solicCache().find(x=>x.id===id);
-  if(!s) return;
-  const esCierre=s.etapa==='cierre';
-  gEl('mo-sol-title').textContent=esCierre?'🏁 Cierre de hora extra':'📋 Solicitud de hora extra';
-  const u=usersCache().find(x=>x.id===s.userId);
-  const salario=parseFloat(u?.profile?.salario)||SALARIO_MIN;
-  const esLidAdm=CU.role==='lider'||CU.role==='admin';
-  const canApp=(CU.role==='admin')||(CU.role==='lider'&&s.area===CU.area);
-  let html=`
-    <div class="dr"><span class="dk">Estado</span><span class="dv"><span class="badge ${s.estado==='pendiente'?'b-pend':s.estado==='aprobada'?'b-ok':s.estado==='rechazada'?'b-rej':'b-close'}">${s.estado.toUpperCase()}</span></span></div>
-    <div class="dr"><span class="dk">Trabajador</span><span class="dv">${s.userName||'—'}</span></div>
-    <div class="dr"><span class="dk">Área</span><span class="dv">${s.area||'—'}</span></div>
-    <div class="dr"><span class="dk">Tipo</span><span class="dv">${s.tipo||'—'}</span></div>
-    <div class="dr"><span class="dk">Fecha</span><span class="dv">${formatDate(s.fecha)}</span></div>
-    <div class="dr"><span class="dk">Jornada normal</span><span class="dv">${s.entradaNormal||'—'} – ${s.salidaNormal||'—'}</span></div>
-    <div class="dr"><span class="dk">Inicio extra</span><span class="dv">${s.inicioExtra||'—'}</span></div>
-    <div class="dr"><span class="dk">Motivo</span><span class="dv">${s.motivo||'—'}</span></div>
-    <div class="dr"><span class="dk">GPS inicial</span><span class="dv" style="font-size:10px">${s.lat?s.lat+', '+s.lng:'—'}</span></div>`;
-  if(s.foto) html+=`<div style="margin:10px 0"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">FOTO INICIO</div><img src="${s.foto}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover"></div>`;
-  if(esCierre){
-    html+=`<div style="border-top:2px solid var(--border);margin:12px 0 8px;padding-top:10px">
-      <div style="font-weight:800;font-size:12px;color:#1E40AF;margin-bottom:8px">🏁 DATOS DE CIERRE</div>
-      <div class="dr"><span class="dk">Hora salida</span><span class="dv">${s.horaSalida||'—'}</span></div>
-      <div class="dr"><span class="dk">Total horas</span><span class="dv" style="font-weight:800;color:var(--ok)">${s.horasTotales||'—'}h</span></div>
-      <div class="dr"><span class="dk">GPS cierre</span><span class="dv" style="font-size:10px">${s.cierreLat?s.cierreLat+', '+s.cierreLng:'—'}</span></div>
-    </div>`;
-    if(esLidAdm&&s.horasTotales){
-      const pct=Math.round((RECARGOS[s.tipo]||0.25)*100);
-      const vh=Math.round(salario/230);
-      html+=`<div class="val-card">
-        <div style="font-size:10px;color:var(--ok);font-weight:700;margin-bottom:6px">💰 VALOR ESTIMADO (visible solo líderes y admin)</div>
-        <div style="font-size:26px;font-weight:800;color:var(--ok)">${fmtCOP(s.valorEstimado||0)}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
-          Salario base: ${fmtCOP(salario)} · Valor hora ordinaria: ${fmtCOP(vh)}<br>
-          Tipo <b>${s.tipo}</b> → recargo +${pct}%<br>
-          ${s.horasTotales}h × ${fmtCOP(Math.round(vh*(1+(RECARGOS[s.tipo]||0.25))))} = <b>${fmtCOP(s.valorEstimado||0)}</b>
-        </div>
-      </div>`;
-    }
-    if(s.fotoEvidencia) html+=`<div style="margin:10px 0"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">FOTO CIERRE</div><img src="${s.fotoEvidencia}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover"></div>`;
-  }
-  if(s.reviewedBy) html+=`<div class="dr"><span class="dk">Revisado por</span><span class="dv">${s.reviewedBy}</span></div>`;
-  gEl('mo-sol-content').innerHTML=html;
-  const actions=gEl('mo-sol-actions');
-  const isMio=s.userId===CU.id;
-  const puedesCerrar=isMio&&s.estado==='aprobada'&&s.etapa==='solicitud';
-  if(s.estado==='pendiente'&&canApp){
-    actions.innerHTML=`
-      <button class="btn btn-ok" onclick="resolver('${id}','aprobada')">${esCierre?'✅ Aprobar cierre':'✅ Aprobar solicitud'}</button>
-      <button class="btn btn-err" onclick="resolver('${id}','rechazada')">${esCierre?'❌ Rechazar cierre':'❌ Rechazar solicitud'}</button>`;
-  } else if(puedesCerrar){
-    actions.innerHTML=`<button class="btn btn-p" onclick="abrirCierre('${id}')">🔒 Registrar cierre de horas extras</button>`;
-  } else {
-    actions.innerHTML='';
-  }
-  gEl('mo-sol').classList.add('open');
-}
-
-async function resolver(id,estado){
-  const solic=solicCache(), idx=solic.findIndex(s=>s.id===id);
-  if(idx<0) return;
-  const esCierre=solic[idx].etapa==='cierre';
-  solic[idx].estado=(esCierre&&estado==='aprobada')?'cerrada':estado;
-  solic[idx].reviewedBy=CU.nombre||CU.username;
-  solic[idx].reviewedAt=new Date().toISOString();
-  await DB.saveSolicDoc(solic[idx]); _solic=solic; closeMoById('mo-sol');
-  const msg=estado==='aprobada'?(esCierre?'Cierre aprobado ✓':'Solicitud aprobada ✓'):'Rechazado';
-  toast(msg,'ok'); updateNotifDot();
-  if(CS==='s-aprobar') renderAprobar();
-  if(CS==='s-home') renderHome();
-  if(CS==='s-admin') renderAdmin();
+  const all = await fbGetSolic();
+  const da = CU.role==='admin' ? all : all.filter(s=>s.area===CU.area);
+  const pend = da.filter(s=>s.estado==='pendiente');
+  const hist = da.filter(s=>s.estado!=='pendiente');
+  const lEl = gEl('ap-list');
+  lEl.innerHTML = pend.length ? pend.map(s=>solItemHTML(s,true)).join('')
+    : `<div class="empty"><div class="empty-ic">🎉</div><div class="empty-t">¡Todo al día!</div><div>No hay solicitudes pendientes</div></div>`;
+  const hEl = gEl('ap-hist');
+  hEl.innerHTML = hist.length ? [...hist].reverse().slice(0,20).map(s=>solItemHTML(s,true)).join('')
+    : `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Sin historial</div>`;
 }
 
 // ── ADMIN ─────────────────────────────────────────────────────
-function renderAdmin(){
+async function renderAdmin(){
   if(!CU||CU.role!=='admin') return;
-  const users=usersCache().filter(u=>u.role!=='admin');
-  const solic=solicCache();
-  gEl('adm-stats').innerHTML=stCard(users.length,'Trabajadores')
+  const [users, solic] = await Promise.all([fbGetUsers(), fbGetSolic()]);
+  const workers = users.filter(u=>u.role!=='admin');
+  gEl('adm-stats').innerHTML =
+    stCard(workers.length,'Trabajadores')
     +stCard(solic.filter(s=>s.estado==='pendiente').length,'Pendientes')
     +stCard(solic.filter(s=>s.etapa==='cierre'&&s.estado==='pendiente').length,'Cierres pend.')
     +stCard(solic.filter(s=>s.estado==='cerrada').length,'Cerradas');
-  gEl('adm-workers').innerHTML=users.length?users.map(u=>`
-    <div class="wi">
-      <div class="wav">${u.profile?.foto?`<img src="${u.profile.foto}">`:(u.nombre||u.username||'?').charAt(0).toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:13px">${u.nombre||u.username}</div>
-        <div style="font-size:11px;color:var(--muted)">${roleLabel(u.role)}</div>
-        <div style="font-size:10px;color:var(--p1);font-weight:700">${u.area||'Sin área'} · ${u.cargo||'Sin cargo'}</div>
+  gEl('adm-workers').innerHTML = workers.length ? workers.map(u=>`
+    <div class="w-item">
+      <div class="w-av">${u.profile?.foto?`<img src="${u.profile.foto}">`:firstName(u.nombre||u.username||'?')}</div>
+      <div class="w-info">
+        <div class="w-name">${u.nombre||u.username}</div>
+        <div class="w-role">${roleLabel(u.role)}</div>
+        <div class="w-area">${u.area||'Sin área'} · ${u.cargo||'Sin cargo'}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px">
         <button class="btn btn-sm btn-s" onclick="editUser('${u.id}')">Editar</button>
-        <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:none;cursor:pointer;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:700" onclick="delUser('${u.id}')">Eliminar</button>
+        <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="delUser('${u.id}')">Eliminar</button>
       </div>
-    </div>`).join(''):
-    `<div class="empty"><div class="empty-ic">👥</div><div class="empty-t">Sin trabajadores</div><div>Cree el primer usuario con el botón + arriba</div></div>`;
-  gEl('adm-solic').innerHTML=solic.length?[...solic].reverse().slice(0,15).map(s=>liHTML(s,true)).join(''):
-    `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Sin solicitudes registradas</div>`;
+    </div>`).join('')
+    : `<div class="empty"><div class="empty-ic">👥</div><div class="empty-t">Sin trabajadores</div><div>Cree el primer usuario con el botón + arriba</div></div>`;
+  gEl('adm-solic').innerHTML = solic.length
+    ? [...solic].reverse().slice(0,15).map(s=>solItemHTML(s,true)).join('')
+    : `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">Sin solicitudes</div>`;
 }
-
-function cambiarCredAdmin(){
+async function cambiarCredAdmin(){
   const nu=gv('adm-nu').trim(), np=gv('adm-np').trim();
   if(!nu&&!np){toast('Ingrese usuario o contraseña nueva','err');return}
   if(np&&np.length<6){toast('Contraseña mínimo 6 caracteres','err');return}
-  const users=usersCache(), idx=users.findIndex(u=>u.id===CU.id);
-  if(idx<0){toast('Error','err');return}
-  if(nu){if(users.find((u,i)=>u.username===nu&&i!==idx)){toast('Ese usuario ya existe','err');return}users[idx].username=nu;}
-  if(np) users[idx].password=np;
-  await DB.saveUser(users[idx]); _users=users; CU=users[idx]; DB.saveSession(CU);
-  gEl('adm-nu').value=''; gEl('adm-np').value='';
-  toast('Credenciales actualizadas ✓'+(nu?' · Usuario: '+nu:''),'ok');
+  showLoad();
+  try{
+    const users = await fbGetUsers();
+    const idx = users.findIndex(u=>u.id===CU.id);
+    if(idx<0){hideLoad();toast('Error','err');return}
+    if(nu){
+      if(users.find((u,i)=>u.username===nu&&i!==idx)){hideLoad();toast('Ese usuario ya existe','err');return}
+      users[idx].username=nu;
+    }
+    if(np) users[idx].password=np;
+    await fbSaveUser(users[idx]);
+    CU=users[idx]; saveSession(CU);
+    gEl('adm-nu').value=''; gEl('adm-np').value='';
+    toast('Credenciales actualizadas ✓'+(nu?' · Usuario: '+nu:''),'ok');
+  }catch(e){toast('Error al actualizar','err');}
+  hideLoad();
 }
-
 function openModalNewUser(){
   ['nu-nombre','nu-user','nu-pass','nu-cargo','nu-area','nu-salario'].forEach(id=>{const e=gEl(id);if(e)e.value='';});
   gEl('nu-rol').value='trabajador';
@@ -973,121 +961,234 @@ async function crearUsuario(){
   const nombre=gv('nu-nombre'),user=gv('nu-user'),pass=gv('nu-pass'),
     cargo=gv('nu-cargo'),area=gv('nu-area'),rol=gv('nu-rol'),sal=gv('nu-salario');
   if(!nombre||!user||!pass){toast('Complete nombre, usuario y contraseña','err');return}
-  const users=usersCache();
-  if(users.find(u=>u.username===user)){toast('Ese usuario ya existe','err');return}
-  const nu={id:'u_'+Date.now(),username:user,password:pass,role:rol,
-    nombre,cargo,area,profile:{salario:parseFloat(sal)||SALARIO_MIN},createdAt:new Date().toISOString()};
-  await DB.saveUser(nu);
-  _users=[...users, nu];
-  closeMoById('mo-user');
-  toast('Usuario '+user+' creado ✓','ok'); renderAdmin();
+  showLoad();
+  try{
+    const users = await fbGetUsers();
+    if(users.find(u=>u.username===user)){hideLoad();toast('Ese usuario ya existe','err');return}
+    const nu = {
+      id:'u_'+Date.now(), username:user, password:pass, role:rol,
+      nombre, cargo, area,
+      profile:{salario:parseFloat(sal)||SALARIO_MIN},
+      createdAt:new Date().toISOString()
+    };
+    await fbSaveUser(nu);
+    closeMo('mo-user');
+    toast('Usuario '+user+' creado ✓','ok');
+    await renderAdmin();
+  }catch(e){toast('Error al crear usuario','err');}
+  hideLoad();
 }
 async function editUser(id){
-  const u=usersCache().find(x=>x.id===id); if(!u) return;
+  const users = await fbGetUsers();
+  const u = users.find(x=>x.id===id); if(!u) return;
   const n=prompt('Nombre (actual: '+u.nombre+'):');
+  if(n===null) return;
   const p=prompt('Nueva contraseña (vacío = mantener):');
   const r=prompt('Rol — trabajador o lider (actual: '+u.role+'):');
   const a=prompt('Área (actual: '+(u.area||'')+'):');
-  const s=prompt('Salario mensual COP (actual: '+(u.profile?.salario||SALARIO_MIN)+'):');
-  const users=usersCache(), idx=users.findIndex(x=>x.id===id);
-  if(n) users[idx].nombre=n;
-  if(p&&p.length>=4) users[idx].password=p;
-  if(r==='lider'||r==='trabajador') users[idx].role=r;
-  if(a!==null&&a!=='') users[idx].area=a;
-  if(s&&!isNaN(parseFloat(s))) users[idx].profile={...users[idx].profile,salario:parseFloat(s)};
-  await DB.saveUser(users[idx]); _users=users;
-  toast('Usuario actualizado ✓','ok'); renderAdmin();
+  const s=prompt('Salario COP (actual: '+(u.profile?.salario||SALARIO_MIN)+'):');
+  showLoad();
+  try{
+    if(n) u.nombre=n;
+    if(p&&p.length>=4) u.password=p;
+    if(r==='lider'||r==='trabajador') u.role=r;
+    if(a!==null&&a!=='') u.area=a;
+    if(s&&!isNaN(parseFloat(s))) u.profile={...u.profile,salario:parseFloat(s)};
+    await fbSaveUser(u);
+    toast('Usuario actualizado ✓','ok');
+    await renderAdmin();
+  }catch(e){toast('Error al actualizar','err');}
+  hideLoad();
 }
 async function delUser(id){
-  const u=usersCache().find(x=>x.id===id); if(!u) return;
-  if(!confirm('¿Eliminar a '+u.nombre+'? Esta acción no se puede deshacer.')) return;
-  await DB.deleteUser(id);
-  _users=usersCache().filter(x=>x.id!==id);
-  toast('Usuario eliminado','ok'); renderAdmin();
+  const users = await fbGetUsers();
+  const u = users.find(x=>x.id===id); if(!u) return;
+  if(!confirm('¿Eliminar a '+u.nombre+'?\nEsta acción no se puede deshacer.')) return;
+  showLoad();
+  try{
+    await fbDeleteUser(id);
+    toast('Usuario eliminado','ok');
+    await renderAdmin();
+  }catch(e){toast('Error al eliminar','err');}
+  hideLoad();
+}
+
+// ── MODAL SOLICITUD ───────────────────────────────────────────
+async function openSolModal(id){
+  showLoad();
+  try{
+    const snap = await db.collection('solicitudes').doc(id).get();
+    if(!snap.exists){hideLoad();return}
+    const s = {...snap.data(),id:snap.id};
+    const esCierre = s.etapa==='cierre';
+    gEl('mo-sol-title').textContent = esCierre?'🏁 Cierre de hora extra':'📋 Solicitud de hora extra';
+    const esLidAdm = CU.role==='lider'||CU.role==='admin';
+    const canApp = (CU.role==='admin')||(CU.role==='lider'&&s.area===CU.area);
+    const puedesCerrar = s.etapa==='solicitud'&&s.estado==='aprobada'&&s.userId===CU.id;
+    let valor='';
+    if(esLidAdm && s.valorEstimado){
+      valor=`<div class="dr"><span class="dk">Valor estimado</span><span class="dv" style="color:var(--ok);font-weight:700">${fmtCOP(s.valorEstimado)}</span></div>`;
+    }
+    const bdg = {'pendiente':'b-pend','aprobada':'b-apro','rechazada':'b-rech','cerrada':'b-cerr'};
+    gEl('mo-sol-content').innerHTML=`
+      <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span class="badge ${bdg[s.estado]||''}">${s.estado.toUpperCase()}</span>
+        <span style="font-size:12px;color:var(--muted)">${formatDate(s.createdAt)}</span>
+      </div>
+      <div class="dr"><span class="dk">Trabajador</span><span class="dv">${s.userName||'—'}</span></div>
+      <div class="dr"><span class="dk">Área</span><span class="dv">${s.area||'—'}</span></div>
+      <div class="dr"><span class="dk">Tipo</span><span class="dv">${s.tipo}</span></div>
+      <div class="dr"><span class="dk">Fecha</span><span class="dv">${formatDate(s.fecha)}</span></div>
+      <div class="dr"><span class="dk">Jornada normal</span><span class="dv">${s.entradaNormal||'—'} – ${s.salidaNormal||'—'}</span></div>
+      <div class="dr"><span class="dk">Inicio extra</span><span class="dv">${s.inicioExtra||'—'}</span></div>
+      ${esCierre?`<div class="dr"><span class="dk">Salida</span><span class="dv">${s.horaSalida||'—'}</span></div>
+      <div class="dr"><span class="dk">Total horas</span><span class="dv">${s.horasTotales||'—'}h</span></div>`:''}
+      ${valor}
+      <div class="dr"><span class="dk">Motivo</span><span class="dv" style="max-width:60%">${s.motivo||'—'}</span></div>
+      ${s.lat?`<div class="dr"><span class="dk">GPS</span><span class="dv" style="font-size:11px">${s.lat}, ${s.lng}</span></div>`:''}
+      ${s.reviewedBy?`<div class="dr"><span class="dk">Revisado por</span><span class="dv">${s.reviewedBy}</span></div>`:''}
+      ${s.foto?`<img src="${s.foto}" style="width:100%;border-radius:10px;margin-top:10px;max-height:180px;object-fit:cover" alt="Foto inicial">`:''}
+      ${s.fotoEvidencia?`<img src="${s.fotoEvidencia}" style="width:100%;border-radius:10px;margin-top:8px;max-height:180px;object-fit:cover" alt="Evidencia cierre">`:''}`;
+    const actions = gEl('mo-sol-actions');
+    if(s.estado==='pendiente'&&canApp){
+      actions.innerHTML=`
+        <button class="btn btn-ok" onclick="resolver('${id}','aprobada')">✅ Aprobar</button>
+        <button class="btn btn-err" onclick="resolver('${id}','rechazada')">❌ Rechazar</button>`;
+    } else if(puedesCerrar){
+      actions.innerHTML=`<button class="btn btn-p" onclick="closeMo('mo-sol');abrirCierre('${id}')">🔒 Registrar cierre</button>`;
+    } else {
+      actions.innerHTML='';
+    }
+    hideLoad();
+    gEl('mo-sol').classList.add('open');
+  }catch(e){hideLoad();toast('Error al cargar solicitud','err');}
+}
+async function resolver(id, estado){
+  showLoad();
+  try{
+    const snap = await db.collection('solicitudes').doc(id).get();
+    if(!snap.exists){hideLoad();return}
+    const s = snap.data();
+    const esCierre = s.etapa==='cierre';
+    const nuevoEstado = (esCierre&&estado==='aprobada')?'cerrada':estado;
+    await db.collection('solicitudes').doc(id).update({
+      estado:nuevoEstado,
+      reviewedBy:CU.nombre||CU.username,
+      reviewedAt:new Date().toISOString()
+    });
+    closeMo('mo-sol');
+    const msg = estado==='aprobada'?(esCierre?'Cierre aprobado ✓':'Solicitud aprobada ✓'):'Rechazado';
+    toast(msg,'ok');
+    await updateNotifDot();
+    if(CS==='s-aprobar') await renderAprobar();
+    if(CS==='s-home') await renderHome();
+    if(CS==='s-admin') await renderAdmin();
+  }catch(e){toast('Error al procesar','err');}
+  hideLoad();
+}
+
+// ── NOTIF DOT ─────────────────────────────────────────────────
+async function updateNotifDot(){
+  if(!CU) return;
+  try{
+    const all = await fbGetSolic();
+    const pend = CU.role==='admin'
+      ? all.filter(s=>s.estado==='pendiente').length
+      : all.filter(s=>s.estado==='pendiente'&&s.area===CU.area).length;
+    const dot = gEl('notif-dot');
+    if(dot) dot.classList.toggle('on', pend>0);
+  }catch(e){}
 }
 
 // ── GPS ───────────────────────────────────────────────────────
-function captureGPS(dotId,txtId,latId,lngId){
-  const dot=gEl(dotId),txt=gEl(txtId);
-  txt.textContent='Obteniendo ubicación...'; dot.classList.add('on');
+function captureGPS(dotId, txtId, latId, lngId){
+  const dot=gEl(dotId), txt=gEl(txtId);
+  txt.textContent='Obteniendo ubicación...';
+  dot.classList.add('on');
   if(!navigator.geolocation){toast('GPS no disponible','err');return}
   navigator.geolocation.getCurrentPosition(
     pos=>{
-      const {latitude:la,longitude:lo,accuracy:ac}=pos.coords;
-      gEl(latId).value=la.toFixed(6); gEl(lngId).value=lo.toFixed(6);
-      txt.textContent=`Lat: ${la.toFixed(4)}, Lng: ${lo.toFixed(4)} (±${Math.round(ac)}m)`;
+      const {latitude:lat,longitude:lng,accuracy} = pos.coords;
+      gEl(latId).value = lat.toFixed(6);
+      gEl(lngId).value = lng.toFixed(6);
+      txt.textContent = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)} (±${Math.round(accuracy)}m)`;
       toast('Ubicación capturada ✓','ok');
     },
-    ()=>{dot.classList.remove('on');txt.textContent='No se pudo obtener ubicación';toast('Active el GPS del celular','err');},
+    err=>{
+      dot.classList.remove('on');
+      txt.textContent='No se pudo obtener la ubicación';
+      toast('Active el GPS del dispositivo','err');
+    },
     {enableHighAccuracy:true,timeout:10000}
   );
 }
 
-// ── PHOTO ─────────────────────────────────────────────────────
-function triggerPhoto(id){gEl(id)?.click()}
-function handlePhoto(input,circleId,iconId,dataId,defIcon){
-  const f=input.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=e=>{
+// ── FOTO ──────────────────────────────────────────────────────
+function triggerPhoto(inputId){gEl(inputId)?.click()}
+function handlePhoto(input, circleId, iconId, dataId){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
     const data=e.target.result;
-    gEl(dataId).value=data; setPhotoCircle(circleId,iconId,data);
+    gEl(dataId).value=data;
+    const c=gEl(circleId);
+    c.innerHTML=`<img src="${data}" alt="Foto">`;
+    c.classList.add('has-photo');
     toast('Foto cargada ✓','ok');
   };
-  r.readAsDataURL(f);
+  reader.readAsDataURL(file);
 }
-function setPhotoCircle(cId,iId,src){
-  const c=gEl(cId); if(!c) return;
-  c.innerHTML=`<img src="${src}" alt="Foto">`; c.classList.add('has');
-}
-function resetPhotoCircle(cId,iId,icon){
-  const c=gEl(cId); if(!c) return;
-  c.innerHTML=`<span id="${iId}">${icon}</span>`; c.classList.remove('has');
+function resetPhoto(circleId, iconId, icon){
+  const c=gEl(circleId);
+  if(c){c.innerHTML=`<span id="${iconId}">${icon}</span>`;c.classList.remove('has-photo');}
 }
 
-// ── NOTIF DOT ─────────────────────────────────────────────────
-function addNotif(area){
-  // simple flag per area
-  const n=DB.get('notifs')||{};
-  n[area]=(n[area]||0)+1; DB.set('notifs',n);
-  updateNotifDot();
-}
-function updateNotifDot(){
-  const dot=gEl('notif-dot'); if(!dot||!CU) return;
-  if(CU.role==='admin'){
-    const pend=solicCache().filter(s=>s.estado==='pendiente').length;
-    dot.style.display=pend>0?'block':'none';
-  } else if(CU.role==='lider'){
-    const pend=solicCache().filter(s=>s.estado==='pendiente'&&s.area===CU.area).length;
-    dot.style.display=pend>0?'block':'none';
-  } else {
-    dot.style.display='none';
-  }
-}
-
-// ── MODAL ─────────────────────────────────────────────────────
-function closeMo(e){if(e.target.classList.contains('mo'))e.target.classList.remove('open')}
-function closeMoById(id){gEl(id)?.classList.remove('open')}
+// ── MODAL HELPERS ─────────────────────────────────────────────
+function closeMoClick(e, id){if(e.target.classList.contains('mo-overlay'))closeMo(id)}
+function closeMo(id){gEl(id)?.classList.remove('open')}
 
 // ── TOAST ─────────────────────────────────────────────────────
-let _tt;
+let toastT;
 function toast(msg,type=''){
-  const t=gEl('toast'); t.textContent=msg; t.className=type;
-  t.classList.add('show'); clearTimeout(_tt);
-  _tt=setTimeout(()=>t.classList.remove('show'),3000);
+  const t=gEl('toast');
+  t.textContent=msg; t.className=type;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),3000);
 }
+
+// ── SOL ITEM HTML ─────────────────────────────────────────────
+function solItemHTML(s, showUser){
+  const colors={'pendiente':'#FEF3C7','aprobada':'#D1FAE5','rechazada':'#FEE2E2','cerrada':'#DBEAFE'};
+  const icons={'pendiente':'⏳','aprobada':'✅','rechazada':'❌','cerrada':'🔒'};
+  const bdg={'pendiente':'b-pend','aprobada':'b-apro','rechazada':'b-rech','cerrada':'b-cerr'};
+  return `<div class="sol-item" onclick="openSolModal('${s.id}')">
+    <div class="sol-ic" style="background:${colors[s.estado]||'#F3F4F6'}">${icons[s.estado]||'📋'}</div>
+    <div class="sol-body">
+      ${showUser?`<div style="font-size:11px;color:var(--p1);font-weight:700;margin-bottom:2px">${s.userName||'—'}</div>`:''}
+      <div class="sol-title">${s.tipo}${s.etapa==='cierre'?' · Cierre':''}</div>
+      <div class="sol-meta">${formatDate(s.fecha)} · ${s.inicioExtra||'—'} · ${s.area||'—'}</div>
+    </div>
+    <span class="badge ${bdg[s.estado]||''}">${s.estado}</span>
+  </div>`;
+}
+
+// ── STAT CARD ─────────────────────────────────────────────────
+function stCard(n,l){return`<div class="stat-card"><div class="stat-num">${n}</div><div class="stat-lbl">${l}</div></div>`}
 
 // ── UTILS ─────────────────────────────────────────────────────
 const gEl=id=>document.getElementById(id);
-const gv=id=>gEl(id)?.value||'';
+const gv=id=>(gEl(id)||{}).value||'';
 const sv=(id,v)=>{const e=gEl(id);if(e)e.value=v||''};
-const today=()=>new Date().toISOString().split('T')[0];
-const firstName=n=>n?n.split(' ')[0]:n;
-const roleLabel=r=>({admin:'Administrador',lider:'Líder de área',trabajador:'Trabajador'}[r]||r);
+function firstName(n){return n?n.split(' ')[0]:n}
+function roleLabel(r){return{admin:'Administrador',lider:'Líder de área',trabajador:'Trabajador'}[r]||r}
+function today(){return new Date().toISOString().split('T')[0]}
 function formatDate(d){
   if(!d) return '—';
-  try{const dt=new Date(d.includes('T')?d:d+'T12:00:00');
-    return dt.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});}
-  catch{return d}
+  try{
+    const dt=new Date(d.includes('T')?d:d+'T00:00:00');
+    return dt.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});
+  }catch{return d}
 }
 function calcHoras(ini,fin){
   if(!ini||!fin) return '0';
@@ -1097,11 +1198,33 @@ function calcHoras(ini,fin){
   if(mins<0) mins+=1440;
   return (mins/60).toFixed(1);
 }
-function fmtCOP(v){return new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(v)}
-function stCard(n,l){return`<div class="sc"><div class="sn">${n}</div><div class="sl">${l}</div></div>`}
+function fmtCOP(n){return'$'+Math.round(n).toLocaleString('es-CO')}
+
+// ── ARRANQUE ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async ()=>{
+  showLoad();
+  try{
+    await initAdmin();
+    const s = getSession();
+    if(s){
+      // Verificar que el usuario sigue existiendo en Firebase
+      const snap = await db.collection('users').doc(s.id).get();
+      if(snap.exists){
+        CU = {...snap.data(), id:snap.id};
+        saveSession(CU);
+        enterApp();
+        return;
+      }
+    }
+  }catch(e){console.error('Init error:',e);}
+  hideLoad();
+  gEl('ne-fecha').value = today();
+});
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!CU)doLogin()});
 
 // ── SERVICE WORKER ────────────────────────────────────────────
-if('serviceWorker'in navigator){
+if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js')
       .then(()=>console.log('SW ✓'))
