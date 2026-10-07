@@ -146,8 +146,8 @@ img{max-width:100%;display:block}
 .dv{font-size:13px;font-weight:500;text-align:right;word-break:break-word;max-width:60%}
 
 /* TOAST */
-#toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bot) + 12px);left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:white;padding:11px 20px;border-radius:30px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;transition:transform .3s;white-space:nowrap;max-width:92vw;text-align:center}
-#toast.show{transform:translateX(-50%) translateY(0)}
+#toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bot) + 16px);left:50%;transform:translateX(-50%) translateY(100px);background:#1a1a2e;color:white;padding:13px 24px;border-radius:30px;font-size:15px;font-weight:700;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .35s;white-space:nowrap;max-width:92vw;text-align:center;opacity:0;display:flex;align-items:center;gap:8px}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 #toast.ok{background:var(--ok)}
 #toast.err{background:var(--err)}
 
@@ -222,7 +222,7 @@ img{max-width:100%;display:block}
 <div id="s-perfil" class="screen">
   <div class="topbar">
     <div class="topbar-title">👤 Mi Perfil</div>
-    <button class="btn btn-sm btn-p" onclick="savePerfil()">Guardar</button>
+    <button onclick="savePerfil()" style="background:var(--grad);color:white;border:none;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(139,63,168,.35)">💾 Guardar</button>
   </div>
   <div style="padding:14px">
     <div class="card" style="margin:0 0 12px">
@@ -274,7 +274,7 @@ img{max-width:100%;display:block}
 <div id="s-extras" class="screen">
   <div class="topbar">
     <div class="topbar-title">⏰ Horas Extras</div>
-    <button class="btn btn-sm btn-p" onclick="navTo('s-nueva')">+ Nueva</button>
+    <button onclick="navTo('s-nueva')" style="background:var(--grad);color:white;border:none;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(139,63,168,.35)">＋ Nueva solicitud</button>
   </div>
   <div style="padding:14px 0">
     <div class="stats-grid" id="ex-stats"></div>
@@ -383,7 +383,7 @@ img{max-width:100%;display:block}
 <div id="s-aprobar" class="screen">
   <div class="topbar">
     <div class="topbar-title">✅ Aprobaciones</div>
-    <button class="btn btn-sm btn-p" onclick="exportarExcel()">📊 Excel</button>
+    <button onclick="exportarExcel()" style="background:#10B981;color:white;border:none;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(16,185,129,.35)">📊 Descargar Excel</button>
   </div>
   <div style="padding:14px 0">
     <div class="sec-lbl">Pendientes</div>
@@ -397,9 +397,9 @@ img{max-width:100%;display:block}
 <div id="s-admin" class="screen">
   <div class="topbar">
     <div class="topbar-title">🔧 Administración</div>
-    <div style="display:flex;gap:6px">
-      <button class="btn btn-sm btn-s" onclick="exportarExcel()">📊 Excel</button>
-      <button class="btn btn-sm btn-p" onclick="openModalNewUser()">+ Usuario</button>
+    <div style="display:flex;gap:8px">
+      <button onclick="exportarExcel()" style="background:#10B981;color:white;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(16,185,129,.35)">📊 Excel</button>
+      <button onclick="openModalNewUser()" style="background:var(--grad);color:white;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(139,63,168,.35)">＋ Usuario</button>
     </div>
   </div>
   <div style="padding:14px 0">
@@ -1249,10 +1249,20 @@ function closeMo(id){gEl(id)?.classList.remove('open')}
 let toastT;
 function toast(msg,type=''){
   const t=gEl('toast');
-  t.textContent=msg; t.className=type;
+  const icons={'ok':'✅','err':'❌','':''};
+  t.innerHTML=(icons[type]?`<span>${icons[type]}</span> `:'')+`<span>${msg}</span>`;
+  t.className=type;
   t.classList.add('show');
   clearTimeout(toastT);
-  toastT=setTimeout(()=>t.classList.remove('show'),3000);
+  toastT=setTimeout(()=>{
+    t.style.opacity='0';
+    t.style.transform='translateX(-50%) translateY(20px)';
+    setTimeout(()=>{
+      t.classList.remove('show');
+      t.style.opacity='';
+      t.style.transform='';
+    },350);
+  },3500);
 }
 
 // ── SOL ITEM HTML ─────────────────────────────────────────────
