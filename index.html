@@ -1367,7 +1367,8 @@ async function generarExcel(){
 
     // Hoja 3 — Festivos del año
     const festivos = Array.from(getFestivos(hoy.getFullYear())).sort();
-    const ws3 = XLSX.utils.json_to_sheet(festivos.map(f=>({'Festivo Colombia '+hoy.getFullYear():f})));
+    const colFest='Festivos Colombia '+hoy.getFullYear();
+    const ws3 = XLSX.utils.json_to_sheet(festivos.map(f=>({[colFest]:f})));
     XLSX.utils.book_append_sheet(wb, ws3, 'Festivos Colombia');
 
     const sufijo = desde&&hasta?`_${desde}_al_${hasta}`:`_${hoy.toISOString().split('T')[0]}`;
