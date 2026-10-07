@@ -1324,6 +1324,9 @@ async function generarExcel(){
       'Aprobado por': s.reviewedBy||'—',
       'Fecha aprobación': s.reviewedAt?s.reviewedAt.split('T')[0]:'—',
       'Motivo rechazo': s.motivoRechazo||'—',
+      'Foto inicio': s.foto?'Disponible en app — ID: '+s.id:'Sin foto',
+      'Foto evidencia cierre': s.fotoEvidencia?'Disponible en app — ID: '+s.id:'Sin foto',
+      'Ver en app': `plan-a-pwa.vercel.app`,
     }));
     const ws1 = XLSX.utils.json_to_sheet(filas);
     ws1['!cols']=[{wch:22},{wch:14},{wch:12},{wch:24},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12},{wch:16},{wch:10},{wch:18},{wch:12},{wch:20},{wch:16},{wch:20}];
@@ -1407,10 +1410,26 @@ async function openSolModal(id){
       <div class="dr"><span class="dk">Total horas</span><span class="dv">${s.horasTotales||'—'}h</span></div>`:''}
       ${valor}
       <div class="dr"><span class="dk">Motivo</span><span class="dv" style="max-width:60%">${s.motivo||'—'}</span></div>
-      ${s.lat?`<div class="dr"><span class="dk">GPS</span><span class="dv" style="font-size:11px">${s.lat}, ${s.lng}</span></div>`:''}
       ${s.reviewedBy?`<div class="dr"><span class="dk">Revisado por</span><span class="dv">${s.reviewedBy}</span></div>`:''}
-      ${s.foto?`<img src="${s.foto}" style="width:100%;border-radius:10px;margin-top:10px;max-height:180px;object-fit:cover" alt="Foto inicial">`:''}
-      ${s.fotoEvidencia?`<img src="${s.fotoEvidencia}" style="width:100%;border-radius:10px;margin-top:8px;max-height:180px;object-fit:cover" alt="Evidencia cierre">`:''}`;
+      ${s.foto?`<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Foto inicio</div><img src="${s.foto}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover" alt="Foto inicial"></div>`:''}
+      ${s.fotoEvidencia?`<div style="margin-top:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Foto evidencia cierre</div><img src="${s.fotoEvidencia}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover" alt="Evidencia cierre"></div>`:''}
+      ${s.lat&&esLidAdm?`
+        <div style="margin-top:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">📍 Ubicación de inicio</div>
+          <div style="border-radius:12px;overflow:hidden;border:1.5px solid var(--border)">
+            <iframe src="https://maps.google.com/maps?q=${s.lat},${s.lng}&z=16&output=embed&hl=es" width="100%" height="200" style="border:none;display:block" loading="lazy"></iframe>
+          </div>
+          <a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" style="display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--p1);font-weight:600;text-decoration:none">🗺️ Abrir en Google Maps</a>
+        </div>
+        ${s.cierreLat?`
+        <div style="margin-top:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">📍 Ubicación de cierre</div>
+          <div style="border-radius:12px;overflow:hidden;border:1.5px solid var(--border)">
+            <iframe src="https://maps.google.com/maps?q=${s.cierreLat},${s.cierreLng}&z=16&output=embed&hl=es" width="100%" height="200" style="border:none;display:block" loading="lazy"></iframe>
+          </div>
+          <a href="https://www.google.com/maps?q=${s.cierreLat},${s.cierreLng}" target="_blank" style="display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--p1);font-weight:600;text-decoration:none">🗺️ Abrir en Google Maps</a>
+        </div>`:''}
+      `:''}`);
     // Gráfico de consumo solo para líder y admin
     if(CU.role==='admin'||CU.role==='lider'){
       try{
