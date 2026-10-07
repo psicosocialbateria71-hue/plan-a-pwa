@@ -449,6 +449,64 @@ img{max-width:100%;display:block}
   </div>
 </div>
 
+<!-- MODAL RECHAZO -->
+<div class="mo-overlay" id="mo-rechazo" onclick="closeMoClick(event,'mo-rechazo')">
+  <div class="mo-box">
+    <div class="mo-title">❌ Motivo de rechazo
+      <button class="mo-close" onclick="closeMo('mo-rechazo')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px">El trabajador verá este motivo en su solicitud.</p>
+    <div class="field"><label>Motivo</label>
+      <textarea id="rechazo-motivo" placeholder="Ej: No hay autorización presupuestal para esta semana..."></textarea>
+    </div>
+    <input type="hidden" id="rechazo-sol-id">
+    <button class="btn btn-err" onclick="confirmarRechazo()">❌ Rechazar solicitud</button>
+  </div>
+</div>
+
+<!-- MODAL HISTORIAL TRABAJADOR -->
+<div class="mo-overlay" id="mo-historial" onclick="closeMoClick(event,'mo-historial')">
+  <div class="mo-box">
+    <div class="mo-title"><span id="mo-hist-title">📊 Historial</span>
+      <button class="mo-close" onclick="closeMo('mo-historial')">✕</button>
+    </div>
+    <div id="mo-hist-content"></div>
+  </div>
+</div>
+
+<!-- MODAL FILTRO EXCEL -->
+<div class="mo-overlay" id="mo-excel" onclick="closeMoClick(event,'mo-excel')">
+  <div class="mo-box">
+    <div class="mo-title">📊 Exportar Excel
+      <button class="mo-close" onclick="closeMo('mo-excel')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Seleccione el período a exportar</p>
+    <div class="field"><label>Período</label>
+      <select id="excel-periodo">
+        <option value="todo">Todo el historial</option>
+        <option value="semana">Esta semana</option>
+        <option value="semana_ant">Semana anterior</option>
+        <option value="quincena">Esta quincena</option>
+        <option value="mes">Este mes</option>
+        <option value="mes_ant">Mes anterior</option>
+        <option value="personalizado">Rango personalizado</option>
+      </select>
+    </div>
+    <div id="excel-rango" style="display:none">
+      <div class="field-row">
+        <div class="field"><label>Desde</label><input type="date" id="excel-desde"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="excel-hasta"></div>
+      </div>
+    </div>
+    <div class="field"><label>Trabajador (opcional)</label>
+      <select id="excel-trabajador">
+        <option value="todos">Todos los trabajadores</option>
+      </select>
+    </div>
+    <button class="btn btn-p" style="background:#10B981;box-shadow:0 4px 12px rgba(16,185,129,.3)" onclick="generarExcel()">📥 Descargar Excel</button>
+  </div>
+</div>
+
 <!-- MODAL NUEVO USUARIO -->
 <div class="mo-overlay" id="mo-user" onclick="closeMoClick(event,'mo-user')">
   <div class="mo-box">
@@ -500,6 +558,63 @@ const db = firebase.firestore();
 // ── CONSTANTES ────────────────────────────────────────────────
 const SALARIO_MIN = 1423500;
 const RECARGOS = {'Diurna':0.25,'Nocturna':0.75,'Dominical/Festiva Diurna':1.00,'Dominical/Festiva Nocturna':1.50};
+const SMMLV2 = SALARIO_MIN * 2; // Tope auxilio transporte
+const AUX_TRANSPORTE = 200000; // Auxilio transporte 2025
+
+// ── FESTIVOS COLOMBIA (Ley 51/1983 + fórmula Gauss) ──────────
+function getFestivos(year){
+  // Festivos fijos
+  const fijos = [
+    `${year}-01-01`,`${year}-05-01`,`${year}-07-20`,
+    `${year}-08-07`,`${year}-12-08`,`${year}-12-25`
+  ];
+  // Festivos "puente" (siguiente lunes si no cae lunes)
+  function siguienteLunes(mes,dia){
+    const d = new Date(year,mes-1,dia);
+    const dow = d.getDay();
+    if(dow===1) return d;
+    const diff = dow===0?1:8-dow;
+    return new Date(year,mes-1,dia+diff);
+  }
+  const puentes = [
+    siguienteLunes(1,6),   // Reyes Magos
+    siguienteLunes(3,19),  // San José
+    siguienteLunes(6,29),  // San Pedro y San Pablo
+    siguienteLunes(8,15),  // Asunción
+    siguienteLunes(10,12), // Día de la Raza
+    siguienteLunes(11,1),  // Todos los Santos
+    siguienteLunes(11,11), // Independencia Cartagena
+  ];
+  // Semana Santa (fórmula Gauss para Pascua)
+  const a=year%19,b=Math.floor(year/100),c=year%100;
+  const d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
+  const g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+  const m=Math.floor((a+11*h+22*l)/451);
+  const mes=Math.floor((h+l-7*m+114)/31);
+  const dia=(h+l-7*m+114)%31+1;
+  const pascua=new Date(year,mes-1,dia);
+  const juevesSanta=new Date(pascua); juevesSanta.setDate(pascua.getDate()-3);
+  const viernesSanto=new Date(pascua); viernesSanto.setDate(pascua.getDate()-2);
+  const ascension=siguienteLunes(mes,dia+39);
+  const corpusChristi=siguienteLunes(mes,dia+60);
+  const sagradoCorazon=siguienteLunes(mes,dia+68);
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return new Set([
+    ...fijos,
+    ...puentes.map(fmt),
+    fmt(juevesSanta),fmt(viernesSanto),
+    fmt(ascension),fmt(corpusChristi),fmt(sagradoCorazon)
+  ]);
+}
+
+function esFestivoODomingo(fecha){
+  if(!fecha) return false;
+  const d = new Date(fecha+'T00:00:00');
+  if(d.getDay()===0) return true;
+  const festivos = getFestivos(d.getFullYear());
+  return festivos.has(fecha);
+}
 
 // ── ESTADO ────────────────────────────────────────────────────
 let CU = null; // currentUser
@@ -755,11 +870,10 @@ function autoDetectTipo(){
   showRecargo();
 }
 function detectTipo(fecha,hora){
-  const d = new Date(fecha+'T00:00:00'), dow = d.getDay();
-  const esFestivo = dow===0;
   const [h] = hora.split(':').map(Number);
-  const diurno = h>=6 && h<19; // Ley 2466 de 2025: nocturno desde las 7pm
-  if(esFestivo) return diurno?'Dominical/Festiva Diurna':'Dominical/Festiva Nocturna';
+  const diurno = h>=6 && h<19; // Ley 2466/2025: nocturno desde 7pm
+  const festivo = esFestivoODomingo(fecha);
+  if(festivo) return diurno?'Dominical/Festiva Diurna':'Dominical/Festiva Nocturna';
   return diurno?'Diurna':'Nocturna';
 }
 function showRecargo(){
@@ -787,6 +901,13 @@ async function submitSolicitud(){
   let tipo = gv('ne-tipo');
   if(!tipo) tipo = detectTipo(fecha, inicioE);
   showLoad();
+  // Verificar límite semanal (12h — Art. 167 CST)
+  const horasSemanales = await getHorasSemanales(CU.id, fecha);
+  if(horasSemanales>=12){
+    hideLoad();
+    toast(`⚠️ Ya tiene ${horasSemanales}h extras esta semana (límite: 12h)`, 'err');
+    return;
+  }
   try{
     const users = await fbGetUsers();
     const u = users.find(x=>x.id===CU.id)||CU;
@@ -855,9 +976,14 @@ function calcCierre(){
     const box = gEl('c-total-box');
     box.textContent = `⏱ Total horas extras: ${horas}h`;
     box.style.display='block';
-    // Advertencia de límite solo visible para líder y admin
-    if(parseFloat(horas)>2 && CU && (CU.role==='admin'||CU.role==='lider')){
-      box.textContent += ' ⚠️ Supera el límite de 2h/día (Art.167 CST)';
+    // Advertencias solo para líder y admin
+    if(CU && (CU.role==='admin'||CU.role==='lider')){
+      if(parseFloat(horas)>2) box.textContent += ' ⚠️ Supera 2h/día (Art.167 CST)';
+      // Verificar límite semanal
+      getHorasSemanales(s.userId, s.fecha).then(sem=>{
+        const total = sem + parseFloat(horas);
+        if(total>12) box.textContent += ` · ⚠️ Total semana: ${total.toFixed(1)}h (límite 12h)`;
+      });
     }
   });
 }
@@ -894,9 +1020,32 @@ async function submitCierre(){
 
 // ── CALCULAR VALOR ────────────────────────────────────────────
 function calcValor(salario, tipo, horas){
-  const vh = salario/230; // Ley 2101/2021: jornada 46h/semana vigente 2025
+  // Si gana menos de 2 SMMLV, el auxilio de transporte NO entra en la base
+  const base = parseFloat(salario)||SALARIO_MIN;
+  const vh = base/230; // Ley 2101/2021: jornada 46h/semana vigente 2025
   const rec = RECARGOS[tipo]||0.25;
   return Math.round(vh*(1+rec)*parseFloat(horas));
+}
+
+// ── HORAS SEMANALES DE UN TRABAJADOR ─────────────────────────
+async function getHorasSemanales(userId, fechaRef){
+  const d = new Date(fechaRef+'T00:00:00');
+  const dow = d.getDay()||7; // lunes=1 ... domingo=7
+  const lunes = new Date(d); lunes.setDate(d.getDate()-(dow-1));
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
+  const fmt = x=>x.toISOString().split('T')[0];
+  const snap = await db.collection('solicitudes')
+    .where('userId','==',userId)
+    .where('estado','!=','rechazada')
+    .get();
+  let total = 0;
+  snap.docs.forEach(doc=>{
+    const s = doc.data();
+    if(s.fecha>=fmt(lunes) && s.fecha<=fmt(domingo) && s.horasTotales){
+      total += parseFloat(s.horasTotales)||0;
+    }
+  });
+  return Math.round(total*10)/10;
 }
 
 // ── APROBACIONES ──────────────────────────────────────────────
@@ -933,6 +1082,7 @@ async function renderAdmin(){
         <div class="w-area">${u.area||'Sin área'} · ${u.cargo||'Sin cargo'}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px">
+        <button class="btn btn-sm" style="background:#EDE9FE;color:#6D28D9" onclick="verHistorialTrabajador('${u.id}','${(u.nombre||u.username).replace(/'/g,"\\'")}')">📊</button>
         <button class="btn btn-sm btn-s" onclick="editUser('${u.id}')">Editar</button>
         <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="delUser('${u.id}')">Eliminar</button>
       </div>
@@ -1024,75 +1174,205 @@ async function delUser(id){
   hideLoad();
 }
 
-// ── EXPORTAR EXCEL ────────────────────────────────────────────
-async function exportarExcel(){
+// ── RECHAZO CON MOTIVO ────────────────────────────────────────
+function abrirRechazo(id){
+  closeMo('mo-sol');
+  gEl('rechazo-sol-id').value=id;
+  gEl('rechazo-motivo').value='';
+  gEl('mo-rechazo').classList.add('open');
+}
+async function confirmarRechazo(){
+  const id=gv('rechazo-sol-id');
+  const motivo=gv('rechazo-motivo').trim();
+  if(!motivo){toast('Ingrese el motivo del rechazo','err');return}
   showLoad();
   try{
-    const solic = await fbGetSolic();
-    const cerradas = solic.filter(s=>s.etapa==='cierre');
-    if(!cerradas.length){hideLoad();toast('No hay horas extras cerradas para exportar','err');return}
+    await db.collection('solicitudes').doc(id).set({
+      estado:'rechazada',
+      motivoRechazo:motivo,
+      reviewedBy:CU.nombre||CU.username,
+      reviewedAt:new Date().toISOString()
+    },{merge:true});
+    closeMo('mo-rechazo');
+    toast('Solicitud rechazada','ok');
+    await updateNotifDot();
+    if(CS==='s-aprobar') await renderAprobar();
+    if(CS==='s-home') await renderHome();
+    if(CS==='s-admin') await renderAdmin();
+  }catch(e){toast('Error al rechazar','err');}
+  hideLoad();
+}
 
-    // Calcular semana actual
+// ── HISTORIAL POR TRABAJADOR ──────────────────────────────────
+async function verHistorialTrabajador(userId, nombre){
+  showLoad();
+  try{
+    const all = await fbGetSolic();
+    const mias = all.filter(s=>s.userId===userId);
+    const totalH = mias.filter(s=>s.horasTotales).reduce((a,s)=>a+parseFloat(s.horasTotales||0),0);
+    const totalV = mias.filter(s=>s.valorEstimado).reduce((a,s)=>a+parseFloat(s.valorEstimado||0),0);
+    const cerradas = mias.filter(s=>s.estado==='cerrada');
+    gEl('mo-hist-title').textContent=`📊 ${nombre}`;
+    gEl('mo-hist-content').innerHTML=`
+      <div class="stats-grid" style="padding:0 0 12px;margin:0 -4px">
+        ${stCard(mias.length,'Solicitudes')}
+        ${stCard(cerradas.length,'Cerradas')}
+        ${stCard(totalH.toFixed(1)+'h','Total horas')}
+        ${stCard(fmtCOP(totalV),'Valor total')}
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Historial de solicitudes</div>
+      ${mias.length?[...mias].reverse().map(s=>`
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:600;font-size:13px">${s.tipo}</span>
+            <span class="badge ${{pendiente:'b-pend',aprobada:'b-apro',rechazada:'b-rech',cerrada:'b-cerr'}[s.estado]||''}">${s.estado}</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">${formatDate(s.fecha)} · ${s.inicioExtra||'—'}${s.horaSalida?' → '+s.horaSalida:''}</div>
+          ${s.horasTotales?`<div style="font-size:12px;color:var(--p1);font-weight:600;margin-top:2px">⏱ ${s.horasTotales}h · ${fmtCOP(s.valorEstimado||0)}</div>`:''}
+          ${s.motivoRechazo?`<div style="font-size:12px;color:var(--err);margin-top:2px">❌ ${s.motivoRechazo}</div>`:''}
+        </div>`).join('')
+      :`<div class="empty"><div class="empty-ic">📋</div><div>Sin solicitudes</div></div>`}`;
+    hideLoad();
+    gEl('mo-historial').classList.add('open');
+  }catch(e){hideLoad();toast('Error al cargar historial','err');}
+}
+
+// ── EXPORTAR EXCEL ────────────────────────────────────────────
+async function exportarExcel(){
+  // Cargar trabajadores en el select del modal
+  showLoad();
+  try{
+    const users = await fbGetUsers();
+    const sel = gEl('excel-trabajador');
+    sel.innerHTML='<option value="todos">Todos los trabajadores</option>';
+    users.filter(u=>u.role!=='admin').forEach(u=>{
+      sel.innerHTML+=`<option value="${u.id}">${u.nombre||u.username}</option>`;
+    });
+    gEl('excel-periodo').value='semana';
+    gEl('excel-rango').style.display='none';
+    gEl('excel-desde').value='';
+    gEl('excel-hasta').value='';
+  }catch(e){}
+  hideLoad();
+  // Mostrar/ocultar rango personalizado
+  gEl('excel-periodo').onchange=function(){
+    gEl('excel-rango').style.display=this.value==='personalizado'?'block':'none';
+  };
+  gEl('mo-excel').classList.add('open');
+}
+
+async function generarExcel(){
+  showLoad();
+  try{
+    const periodo = gv('excel-periodo');
+    const trabajadorId = gv('excel-trabajador');
     const hoy = new Date();
-    const lunes = new Date(hoy);
-    lunes.setDate(hoy.getDate()-hoy.getDay()+1);
-    const domingo = new Date(lunes);
-    domingo.setDate(lunes.getDate()+6);
-    const fmtSem = d=>d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
+    let desde='', hasta='';
 
-    // Datos para Excel
+    if(periodo==='semana'){
+      const dow=hoy.getDay()||7;
+      const lun=new Date(hoy); lun.setDate(hoy.getDate()-(dow-1));
+      const dom=new Date(lun); dom.setDate(lun.getDate()+6);
+      desde=lun.toISOString().split('T')[0];
+      hasta=dom.toISOString().split('T')[0];
+    } else if(periodo==='semana_ant'){
+      const dow=hoy.getDay()||7;
+      const lun=new Date(hoy); lun.setDate(hoy.getDate()-(dow-1)-7);
+      const dom=new Date(lun); dom.setDate(lun.getDate()+6);
+      desde=lun.toISOString().split('T')[0];
+      hasta=dom.toISOString().split('T')[0];
+    } else if(periodo==='quincena'){
+      const d=hoy.getDate();
+      if(d<=15){
+        desde=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`;
+        hasta=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-15`;
+      } else {
+        desde=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-16`;
+        hasta=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${new Date(hoy.getFullYear(),hoy.getMonth()+1,0).getDate()}`;
+      }
+    } else if(periodo==='mes'){
+      desde=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`;
+      hasta=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${new Date(hoy.getFullYear(),hoy.getMonth()+1,0).getDate()}`;
+    } else if(periodo==='mes_ant'){
+      const ant=new Date(hoy.getFullYear(),hoy.getMonth()-1,1);
+      desde=`${ant.getFullYear()}-${String(ant.getMonth()+1).padStart(2,'0')}-01`;
+      hasta=`${ant.getFullYear()}-${String(ant.getMonth()+1).padStart(2,'0')}-${new Date(ant.getFullYear(),ant.getMonth()+1,0).getDate()}`;
+    } else if(periodo==='personalizado'){
+      desde=gv('excel-desde'); hasta=gv('excel-hasta');
+      if(!desde||!hasta){hideLoad();toast('Seleccione el rango de fechas','err');return}
+    }
+
+    let solic = await fbGetSolic();
+    // Filtrar por trabajador
+    if(trabajadorId!=='todos') solic=solic.filter(s=>s.userId===trabajadorId);
+    // Filtrar por fecha
+    if(desde&&hasta) solic=solic.filter(s=>s.fecha>=desde&&s.fecha<=hasta);
+    // Solo cerradas para nómina
+    const cerradas = solic.filter(s=>s.etapa==='cierre');
+    if(!cerradas.length){hideLoad();closeMo('mo-excel');toast('Sin registros para el período seleccionado','err');return}
+
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1 — Detalle
     const filas = cerradas.map(s=>({
       'Trabajador': s.userName||'—',
       'Área': s.area||'—',
-      'Fecha': formatDate(s.fecha),
+      'Fecha': s.fecha||'—',
       'Tipo hora extra': s.tipo||'—',
-      'Entrada jornada normal': s.entradaNormal||'—',
-      'Salida jornada normal': s.salidaNormal||'—',
-      'Inicio hora extra': s.inicioExtra||'—',
-      'Fin hora extra': s.horaSalida||'—',
+      'Entrada jornada': s.entradaNormal||'—',
+      'Salida jornada': s.salidaNormal||'—',
+      'Inicio extra': s.inicioExtra||'—',
+      'Fin extra': s.horaSalida||'—',
       'Total horas': parseFloat(s.horasTotales||0),
-      'Salario base': parseFloat(s.salarioBase||SALARIO_MIN),
+      'Salario base COP': parseFloat(s.salarioBase||SALARIO_MIN),
+      'Recargo %': (RECARGOS[s.tipo]||0.25)*100,
       'Valor estimado COP': parseFloat(s.valorEstimado||0),
       'Estado': s.estado||'—',
       'Aprobado por': s.reviewedBy||'—',
-      'Fecha aprobación': s.reviewedAt?formatDate(s.reviewedAt):'—',
+      'Fecha aprobación': s.reviewedAt?s.reviewedAt.split('T')[0]:'—',
+      'Motivo rechazo': s.motivoRechazo||'—',
     }));
+    const ws1 = XLSX.utils.json_to_sheet(filas);
+    ws1['!cols']=[{wch:22},{wch:14},{wch:12},{wch:24},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12},{wch:16},{wch:10},{wch:18},{wch:12},{wch:20},{wch:16},{wch:20}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Detalle horas extras');
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(filas);
-
-    // Ancho de columnas
-    ws['!cols']=[
-      {wch:22},{wch:14},{wch:12},{wch:24},{wch:22},{wch:20},
-      {wch:18},{wch:16},{wch:12},{wch:16},{wch:20},{wch:12},{wch:20},{wch:18}
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Horas Extras');
-
-    // Hoja resumen por trabajador
-    const resumen = {};
+    // Hoja 2 — Resumen por trabajador
+    const resumen={};
     cerradas.forEach(s=>{
-      const key = s.userName||s.userId;
-      if(!resumen[key]){
-        resumen[key]={
-          'Trabajador':s.userName||'—',
-          'Área':s.area||'—',
-          'Total solicitudes':0,
-          'Total horas':0,
-          'Total valor COP':0
-        };
-      }
-      resumen[key]['Total solicitudes']++;
-      resumen[key]['Total horas']+=parseFloat(s.horasTotales||0);
-      resumen[key]['Total valor COP']+=parseFloat(s.valorEstimado||0);
+      const k=s.userId;
+      if(!resumen[k]) resumen[k]={
+        'Trabajador':s.userName||'—','Área':s.area||'—',
+        'Horas diurnas':0,'Horas nocturnas':0,
+        'Horas dom/festiva diurna':0,'Horas dom/festiva nocturna':0,
+        'Total horas':0,'Total valor COP':0,'# Solicitudes':0
+      };
+      resumen[k]['# Solicitudes']++;
+      resumen[k]['Total horas']+=parseFloat(s.horasTotales||0);
+      resumen[k]['Total valor COP']+=parseFloat(s.valorEstimado||0);
+      const h=parseFloat(s.horasTotales||0);
+      if(s.tipo==='Diurna') resumen[k]['Horas diurnas']+=h;
+      else if(s.tipo==='Nocturna') resumen[k]['Horas nocturnas']+=h;
+      else if(s.tipo==='Dominical/Festiva Diurna') resumen[k]['Horas dom/festiva diurna']+=h;
+      else if(s.tipo==='Dominical/Festiva Nocturna') resumen[k]['Horas dom/festiva nocturna']+=h;
     });
-    const wsRes = XLSX.utils.json_to_sheet(Object.values(resumen));
-    wsRes['!cols']=[{wch:22},{wch:14},{wch:18},{wch:14},{wch:18}];
-    XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen por trabajador');
+    // Redondear
+    Object.values(resumen).forEach(r=>{
+      ['Horas diurnas','Horas nocturnas','Horas dom/festiva diurna','Horas dom/festiva nocturna','Total horas']
+        .forEach(k=>{r[k]=Math.round(r[k]*10)/10});
+      r['Total valor COP']=Math.round(r['Total valor COP']);
+    });
+    const ws2 = XLSX.utils.json_to_sheet(Object.values(resumen));
+    ws2['!cols']=[{wch:22},{wch:14},{wch:14},{wch:16},{wch:22},{wch:24},{wch:12},{wch:18},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Resumen nómina');
 
-    // Nombre del archivo con fecha
-    const fecha = hoy.toISOString().split('T')[0];
-    XLSX.writeFile(wb, `HorasExtras_PlanA_${fecha}.xlsx`);
+    // Hoja 3 — Festivos del año
+    const festivos = Array.from(getFestivos(hoy.getFullYear())).sort();
+    const ws3 = XLSX.utils.json_to_sheet(festivos.map(f=>({'Festivo Colombia '+hoy.getFullYear():f})));
+    XLSX.utils.book_append_sheet(wb, ws3, 'Festivos Colombia');
+
+    const sufijo = desde&&hasta?`_${desde}_al_${hasta}`:`_${hoy.toISOString().split('T')[0]}`;
+    XLSX.writeFile(wb, `HorasExtras_PlanA${sufijo}.xlsx`);
+    closeMo('mo-excel');
     toast('Excel descargado ✓','ok');
   }catch(e){
     console.error(e);
@@ -1141,11 +1421,18 @@ async function openSolModal(id){
     if(s.estado==='pendiente'&&canApp){
       actions.innerHTML=`
         <button class="btn btn-ok" onclick="resolver('${id}','aprobada')">✅ Aprobar</button>
-        <button class="btn btn-err" onclick="resolver('${id}','rechazada')">❌ Rechazar</button>`;
+        <button class="btn btn-err" onclick="abrirRechazo('${id}')">❌ Rechazar</button>`;
     } else if(puedesCerrar){
       actions.innerHTML=`<button class="btn btn-p" onclick="closeMo('mo-sol');abrirCierre('${id}')">🔒 Registrar cierre</button>`;
     } else {
       actions.innerHTML='';
+    }
+    // Mostrar motivo de rechazo si aplica
+    if(s.estado==='rechazada'&&s.motivoRechazo){
+      gEl('mo-sol-content').innerHTML+=`<div style="margin-top:12px;padding:12px;background:#FEE2E2;border-radius:10px">
+        <div style="font-size:12px;font-weight:700;color:#991B1B;margin-bottom:4px">❌ Motivo del rechazo:</div>
+        <div style="font-size:13px;color:#7F1D1D">${s.motivoRechazo}</div>
+      </div>`;
     }
     hideLoad();
     gEl('mo-sol').classList.add('open');
