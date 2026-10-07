@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Plan A">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-touch-fullscreen" content="yes">
 <title>Plan A — Gestión de Personal</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -175,6 +178,19 @@ img{max-width:100%;display:block}
 </head>
 <body>
 <div id="loading"><div class="spin"></div></div>
+
+<!-- BANNER INSTALACIÓN -->
+<div id="install-banner" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:white;border-top:2px solid var(--p1);padding:14px 16px calc(14px + var(--safe-bot));z-index:9998;box-shadow:0 -4px 20px rgba(0,0,0,.15)">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <img src="apple-touch-icon.png" style="width:48px;height:48px;border-radius:10px;flex-shrink:0">
+    <div style="flex:1">
+      <div style="font-weight:800;font-size:14px;margin-bottom:3px">Instalar Plan A</div>
+      <div id="install-msg" style="font-size:12px;color:var(--muted);line-height:1.4"></div>
+    </div>
+    <button onclick="cerrarBanner()" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;padding:0;flex-shrink:0">✕</button>
+  </div>
+  <button id="install-btn" style="display:none;width:100%;margin-top:10px;background:var(--grad);color:white;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer">📲 Instalar ahora</button>
+</div>
 
 <div id="app">
 
@@ -1669,9 +1685,66 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   }catch(e){console.error('Init error:',e);}
   hideLoad();
   gEl('ne-fecha').value = today();
+  // Mostrar banner de instalación después de 3 segundos
+  setTimeout(mostrarBannerInstalacion, 3000);
 });
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!CU)doLogin()});
+
+// ── INSTALACIÓN PWA ───────────────────────────────────────────
+let deferredPrompt = null;
+
+function cerrarBanner(){
+  gEl('install-banner').style.display='none';
+  localStorage.setItem('pa_banner_closed','1');
+}
+
+function mostrarBannerInstalacion(){
+  // No mostrar si ya lo cerró o si ya está instalada
+  if(localStorage.getItem('pa_banner_closed')) return;
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone) return;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+
+  const banner = gEl('install-banner');
+  const msg = gEl('install-msg');
+  const btn = gEl('install-btn');
+
+  if(isIOS){
+    if(!isSafari){
+      // iPhone usando Chrome u otro navegador
+      msg.innerHTML = '⚠️ Para instalar en iPhone use <b>Safari</b>:<br>1. Abra <b>Safari</b><br>2. Vaya a <b>plan-a-pwa.vercel.app</b><br>3. Toque <b>Compartir</b> ↑ → <b>"Añadir a pantalla de inicio"</b>';
+    } else {
+      // iPhone en Safari
+      msg.innerHTML = 'Toque <b>Compartir</b> ↑ en la barra inferior y luego <b>"Añadir a pantalla de inicio"</b> para instalar la app.';
+    }
+    banner.style.display='block';
+  } else if(isAndroid && deferredPrompt){
+    msg.innerHTML = 'Instale la app en su dispositivo para usarla sin internet y más rápido.';
+    btn.style.display='block';
+    btn.onclick = async ()=>{
+      deferredPrompt.prompt();
+      const {outcome} = await deferredPrompt.userChoice;
+      if(outcome==='accepted') cerrarBanner();
+      deferredPrompt = null;
+    };
+    banner.style.display='block';
+  }
+}
+
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  mostrarBannerInstalacion();
+});
+
+window.addEventListener('appinstalled', ()=>{
+  cerrarBanner();
+  deferredPrompt = null;
+});
 
 // ── SERVICE WORKER ────────────────────────────────────────────
 if('serviceWorker' in navigator){
