@@ -901,13 +901,6 @@ async function submitSolicitud(){
   let tipo = gv('ne-tipo');
   if(!tipo) tipo = detectTipo(fecha, inicioE);
   showLoad();
-  // Verificar límite semanal (12h — Art. 167 CST)
-  const horasSemanales = await getHorasSemanales(CU.id, fecha);
-  if(horasSemanales>=12){
-    hideLoad();
-    toast(`⚠️ Ya tiene ${horasSemanales}h extras esta semana (límite: 12h)`, 'err');
-    return;
-  }
   try{
     const users = await fbGetUsers();
     const u = users.find(x=>x.id===CU.id)||CU;
@@ -1418,6 +1411,52 @@ async function openSolModal(id){
       ${s.reviewedBy?`<div class="dr"><span class="dk">Revisado por</span><span class="dv">${s.reviewedBy}</span></div>`:''}
       ${s.foto?`<img src="${s.foto}" style="width:100%;border-radius:10px;margin-top:10px;max-height:180px;object-fit:cover" alt="Foto inicial">`:''}
       ${s.fotoEvidencia?`<img src="${s.fotoEvidencia}" style="width:100%;border-radius:10px;margin-top:8px;max-height:180px;object-fit:cover" alt="Evidencia cierre">`:''}`;
+    // Gráfico de consumo solo para líder y admin
+    if(CU.role==='admin'||CU.role==='lider'){
+      try{
+        const all = await fbGetSolic();
+        const hoy = new Date();
+        const fechaSol = s.fecha||hoy.toISOString().split('T')[0];
+
+        // Diario
+        const hDia = all.filter(x=>x.userId===s.userId&&x.fecha===fechaSol&&x.horasTotales&&x.estado!=='rechazada')
+          .reduce((a,x)=>a+parseFloat(x.horasTotales||0),0);
+
+        // Semanal
+        const hSem = await getHorasSemanales(s.userId, fechaSol);
+
+        // Mensual
+        const mes = fechaSol.substring(0,7);
+        const hMes = all.filter(x=>x.userId===s.userId&&(x.fecha||'').startsWith(mes)&&x.horasTotales&&x.estado!=='rechazada')
+          .reduce((a,x)=>a+parseFloat(x.horasTotales||0),0);
+
+        const barraConsumo=(val,max,lbl,color)=>{
+          const pct=Math.min(Math.round((val/max)*100),100);
+          const over=val>max;
+          const c=over?'#EF4444':pct>75?'#F59E0B':color;
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:var(--muted)">${lbl}</span>
+              <span style="font-size:12px;font-weight:700;color:${c}">${val.toFixed(1)}h / ${max}h ${over?'⚠️':''}</span>
+            </div>
+            <div style="background:#F3F4F6;border-radius:20px;height:10px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${c};border-radius:20px;transition:width .5s"></div>
+            </div>
+            ${over?`<div style="font-size:11px;color:#EF4444;margin-top:3px;font-weight:600">⚠️ Supera el límite — verificar compensación por descanso</div>`:''}
+          </div>`;
+        };
+
+        gEl('mo-sol-content').innerHTML+=`
+          <div style="margin-top:14px;padding:14px;background:#F8F5FF;border-radius:12px;border:1.5px solid #E9D5FF">
+            <div style="font-size:12px;font-weight:800;color:var(--p1);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">📊 Control de horas extras — ${s.userName||'Trabajador'}</div>
+            ${barraConsumo(hDia,2,'Hoy (límite 2h/día)','#10B981')}
+            ${barraConsumo(hSem,12,'Esta semana (límite 12h/sem)','#3B82F6')}
+            ${barraConsumo(hMes,48,'Este mes (referencia 48h/mes)','#8B3FA8')}
+            <div style="font-size:10px;color:var(--muted);margin-top:6px">Art. 167 CST · Ley 2466/2025 · Las horas que superen el límite pueden compensarse con descanso</div>
+          </div>`;
+      }catch(e){console.warn('Error consumo:',e);}
+    }
+
     const actions = gEl('mo-sol-actions');
     if(s.estado==='pendiente'&&canApp){
       actions.innerHTML=`
