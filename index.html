@@ -1030,17 +1030,17 @@ function calcValor(salario, tipo, horas){
 // ── HORAS SEMANALES DE UN TRABAJADOR ─────────────────────────
 async function getHorasSemanales(userId, fechaRef){
   const d = new Date(fechaRef+'T00:00:00');
-  const dow = d.getDay()||7; // lunes=1 ... domingo=7
+  const dow = d.getDay()||7;
   const lunes = new Date(d); lunes.setDate(d.getDate()-(dow-1));
   const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
   const fmt = x=>x.toISOString().split('T')[0];
   const snap = await db.collection('solicitudes')
     .where('userId','==',userId)
-    .where('estado','!=','rechazada')
     .get();
   let total = 0;
   snap.docs.forEach(doc=>{
     const s = doc.data();
+    if(s.estado==='rechazada') return;
     if(s.fecha>=fmt(lunes) && s.fecha<=fmt(domingo) && s.horasTotales){
       total += parseFloat(s.horasTotales)||0;
     }
