@@ -1378,6 +1378,17 @@ async function generarExcel(){
   hideLoad();
 }
 
+// ── MAPA HTML ─────────────────────────────────────────────────
+function mapaHTML(titulo, lat, lng){
+  return '<div style="margin-top:14px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">📍 '+titulo+'</div>'
+    +'<div style="border-radius:12px;overflow:hidden;border:1.5px solid var(--border)">'
+    +'<iframe src="https://maps.google.com/maps?q='+lat+','+lng+'&z=16&output=embed&hl=es" width="100%" height="200" style="border:none;display:block" loading="lazy"></iframe>'
+    +'</div>'
+    +'<a href="https://www.google.com/maps?q='+lat+','+lng+'" target="_blank" style="display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--p1);font-weight:600;text-decoration:none">🗺️ Abrir en Google Maps</a>'
+    +'</div>';
+}
+
 // ── MODAL SOLICITUD ───────────────────────────────────────────
 async function openSolModal(id){
   showLoad();
@@ -1395,7 +1406,7 @@ async function openSolModal(id){
       valor=`<div class="dr"><span class="dk">Valor estimado</span><span class="dv" style="color:var(--ok);font-weight:700">${fmtCOP(s.valorEstimado)}</span></div>`;
     }
     const bdg = {'pendiente':'b-pend','aprobada':'b-apro','rechazada':'b-rech','cerrada':'b-cerr'};
-    gEl('mo-sol-content').innerHTML=`
+    let htmlContent = `
       <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px">
         <span class="badge ${bdg[s.estado]||''}">${s.estado.toUpperCase()}</span>
         <span style="font-size:12px;color:var(--muted)">${formatDate(s.createdAt)}</span>
@@ -1406,30 +1417,15 @@ async function openSolModal(id){
       <div class="dr"><span class="dk">Fecha</span><span class="dv">${formatDate(s.fecha)}</span></div>
       <div class="dr"><span class="dk">Jornada normal</span><span class="dv">${s.entradaNormal||'—'} – ${s.salidaNormal||'—'}</span></div>
       <div class="dr"><span class="dk">Inicio extra</span><span class="dv">${s.inicioExtra||'—'}</span></div>
-      ${esCierre?`<div class="dr"><span class="dk">Salida</span><span class="dv">${s.horaSalida||'—'}</span></div>
-      <div class="dr"><span class="dk">Total horas</span><span class="dv">${s.horasTotales||'—'}h</span></div>`:''}
+      ${esCierre?'<div class="dr"><span class="dk">Salida</span><span class="dv">'+(s.horaSalida||'—')+'</span></div><div class="dr"><span class="dk">Total horas</span><span class="dv">'+(s.horasTotales||'—')+'h</span></div>'  :''}
       ${valor}
       <div class="dr"><span class="dk">Motivo</span><span class="dv" style="max-width:60%">${s.motivo||'—'}</span></div>
-      ${s.reviewedBy?`<div class="dr"><span class="dk">Revisado por</span><span class="dv">${s.reviewedBy}</span></div>`:''}
-      ${s.foto?`<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Foto inicio</div><img src="${s.foto}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover" alt="Foto inicial"></div>`:''}
-      ${s.fotoEvidencia?`<div style="margin-top:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Foto evidencia cierre</div><img src="${s.fotoEvidencia}" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover" alt="Evidencia cierre"></div>`:''}
-      ${s.lat&&esLidAdm?`
-        <div style="margin-top:14px">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">📍 Ubicación de inicio</div>
-          <div style="border-radius:12px;overflow:hidden;border:1.5px solid var(--border)">
-            <iframe src="https://maps.google.com/maps?q=${s.lat},${s.lng}&z=16&output=embed&hl=es" width="100%" height="200" style="border:none;display:block" loading="lazy"></iframe>
-          </div>
-          <a href="https://www.google.com/maps?q=${s.lat},${s.lng}" target="_blank" style="display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--p1);font-weight:600;text-decoration:none">🗺️ Abrir en Google Maps</a>
-        </div>
-        ${s.cierreLat?`
-        <div style="margin-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">📍 Ubicación de cierre</div>
-          <div style="border-radius:12px;overflow:hidden;border:1.5px solid var(--border)">
-            <iframe src="https://maps.google.com/maps?q=${s.cierreLat},${s.cierreLng}&z=16&output=embed&hl=es" width="100%" height="200" style="border:none;display:block" loading="lazy"></iframe>
-          </div>
-          <a href="https://www.google.com/maps?q=${s.cierreLat},${s.cierreLng}" target="_blank" style="display:block;text-align:center;margin-top:6px;font-size:12px;color:var(--p1);font-weight:600;text-decoration:none">🗺️ Abrir en Google Maps</a>
-        </div>`:''}
-      `:''}`);
+      ${s.reviewedBy?'<div class="dr"><span class="dk">Revisado por</span><span class="dv">'+s.reviewedBy+'</span></div>':''}
+      ${s.foto?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Foto inicio</div><img src="'+s.foto+'" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover"></div>':''}
+      ${s.fotoEvidencia?'<div style="margin-top:8px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Foto evidencia cierre</div><img src="'+s.fotoEvidencia+'" style="width:100%;border-radius:10px;max-height:180px;object-fit:cover"></div>':''}
+      ${s.lat&&esLidAdm?mapaHTML('Ubicación de inicio',s.lat,s.lng):''}
+      ${s.cierreLat&&esLidAdm?mapaHTML('Ubicación de cierre',s.cierreLat,s.cierreLng):''}`;
+    gEl('mo-sol-content').innerHTML = htmlContent;
     // Gráfico de consumo solo para líder y admin
     if(CU.role==='admin'||CU.role==='lider'){
       try{
